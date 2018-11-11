@@ -1,4 +1,4 @@
-// const ArgumentType = require('../../extension-support/argument-type');
+const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 const Video = require('../../io/video');
@@ -31,7 +31,7 @@ class Scratch3PoseNetBlocks {
          */
         this.runtime = runtime;
 
-        Posenet.load(1.0).then(net => {
+        Posenet.load(0.5).then(net => {
             this.posenet = net;
             if (this.runtime.ioDevices) {
                 // Kick off looping the analysis logic.
@@ -95,13 +95,13 @@ class Scratch3PoseNetBlocks {
                 dimensions: Scratch3PoseNetBlocks.DIMENSIONS
             });
             if (frame) {
-                this._lastUpdate = time;
-                const scaleFactor = 0.25;
+                const scaleFactor = 0.5;
                 const flipHorizontal = false;
-                const outputStride = 16;
+                const outputStride = 8;
                 this.posenet.estimateSinglePose(frame, scaleFactor, flipHorizontal, outputStride).then(
                     pose => {
                         this.currentPose = pose;
+                        this._lastUpdate = time;
                     }
                 );
             }
@@ -127,39 +127,61 @@ class Scratch3PoseNetBlocks {
             menuIconURI: menuIconURI,
             blocks: [
                 {
-                    opcode: 'noseX',
+                    opcode: 'partX',
                     text: formatMessage({
                         id: '',
-                        default: 'nose x',
+                        default: '[PART] x',
                         description: ''
                     }),
+                    arguments: {
+                        PART: {
+                            type: ArgumentType.NUMBER,
+                            menu: 'PART',
+                            defaultValue: 0
+                        }
+                    },
                     blockType: BlockType.REPORTER
                 },
                 {
-                    opcode: 'noseY',
+                    opcode: 'partY',
                     text: formatMessage({
                         id: '',
-                        default: 'nose y',
+                        default: '[PART] y',
                         description: ''
                     }),
+                    arguments: {
+                        PART: {
+                            type: ArgumentType.NUMBER,
+                            menu: 'PART',
+                            defaultValue: 0
+                        }
+                    },
                     blockType: BlockType.REPORTER
                 }
-
             ],
             menus: {
+                PART: [
+                    {text: 'nose', value: 0},
+                    {text: 'left eye', value: 2},
+                    {text: 'right eye', value: 1},
+                    {text: 'left ear', value: 4},
+                    {text: 'right ear', value: 3},
+                    {text: 'left wrist', value: 9},
+                    {text: 'right wrist', value: 10}
+                ]
             }
         };
     }
 
     getPartPosition (part) {
-        if (!this.currentPose) return 0;
-        if (!this.currentPose.keypoints) return 0;
-        const result = this.currentPose.keypoints.find(r =>
-            r.part === part
-        );
+        const defaultPos = {x: 0, y: 0};
+        if (!this.currentPose) return defaultPos;
+        if (!this.currentPose.keypoints) return defaultPos;
+        const result = this.currentPose.keypoints[part];
         if (result) {
             return this.toScratchCoords(result.position);
         }
+        return defaultPos;
     }
 
     toScratchCoords (position) {
@@ -170,11 +192,19 @@ class Scratch3PoseNetBlocks {
     }
 
     noseX () {
-        return this.getPartPosition('nose').x;
+        return this.getPartPosition(0).x;
     }
 
     noseY () {
-        return this.getPartPosition('nose').y;
+        return this.getPartPosition(0).y;
+    }
+
+    partX (args) {
+        return this.getPartPosition(args.PART).x;
+    }
+
+    partY (args) {
+        return this.getPartPosition(args.PART).y;
     }
 }
 
