@@ -1,5 +1,6 @@
 const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
+const MathUtil = require('../../util/math-util');
 const formatMessage = require('format-message');
 const Video = require('../../io/video');
 const Posenet = require('@tensorflow-models/posenet');
@@ -127,10 +128,35 @@ class Scratch3PoseNetBlocks {
             menuIconURI: menuIconURI,
             blocks: [
                 {
+                    opcode: 'whenTilted',
+                    text: formatMessage({
+                        id: '',
+                        default: 'when head tilts [DIRECTION]',
+                        description: ''
+                    }),
+                    blockType: BlockType.HAT,
+                    arguments: {
+                        DIRECTION: {
+                            type: ArgumentType.STRING,
+                            menu: 'TILT',
+                            defaultValue: 'left'
+                        }
+                    }
+                },
+                {
+                    opcode: 'headDirection',
+                    text: formatMessage({
+                        id: '',
+                        default: 'head direction',
+                        description: ''
+                    }),
+                    blockType: BlockType.REPORTER
+                },
+                {
                     opcode: 'partX',
                     text: formatMessage({
                         id: '',
-                        default: '[PART] x',
+                        default: 'x position of [PART]',
                         description: ''
                     }),
                     arguments: {
@@ -146,7 +172,7 @@ class Scratch3PoseNetBlocks {
                     opcode: 'partY',
                     text: formatMessage({
                         id: '',
-                        default: '[PART] y',
+                        default: 'y position of [PART]',
                         description: ''
                     }),
                     arguments: {
@@ -162,12 +188,16 @@ class Scratch3PoseNetBlocks {
             menus: {
                 PART: [
                     {text: 'nose', value: 0},
-                    {text: 'left eye', value: 2},
+                    {text: 'left eye', value: 2}, // left/right seem reversed?
                     {text: 'right eye', value: 1},
                     {text: 'left ear', value: 4},
                     {text: 'right ear', value: 3},
                     {text: 'left wrist', value: 9},
                     {text: 'right wrist', value: 10}
+                ],
+                TILT: [
+                    {text: 'left', value: 'left'},
+                    {text: 'right', value: 'right'}
                 ]
             }
         };
@@ -191,20 +221,32 @@ class Scratch3PoseNetBlocks {
         };
     }
 
-    noseX () {
-        return this.getPartPosition(0).x;
-    }
-
-    noseY () {
-        return this.getPartPosition(0).y;
-    }
-
     partX (args) {
         return this.getPartPosition(args.PART).x;
     }
 
     partY (args) {
         return this.getPartPosition(args.PART).y;
+    }
+
+    whenTilted (args) {
+        const TILT_THRESHOLD = 10;
+        if (args.DIRECTION === 'left') {
+            return this.headDirection() < (90 - TILT_THRESHOLD);
+        }
+        if (args.DIRECTION === 'right') {
+            return this.headDirection() > (90 + TILT_THRESHOLD);
+        }
+        return false;
+    }
+
+    headDirection () {
+        const leftEyePos = this.getPartPosition(2);
+        const rightEyePos = this.getPartPosition(1);
+        const dx = rightEyePos.x - leftEyePos.x;
+        const dy = rightEyePos.y - leftEyePos.y;
+        const direction = 90 - MathUtil.radToDeg(Math.atan2(dy, dx));
+        return direction;
     }
 }
 
