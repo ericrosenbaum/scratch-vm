@@ -118,11 +118,11 @@ class Scratch3PoseNetBlocks {
 
         // Return extension definition
         return {
-            id: 'posenet',
+            id: 'bodySensing',
             name: formatMessage({
-                id: 'posenet.categoryName',
-                default: 'posenet',
-                description: ''
+                id: 'bodySensing.categoryName',
+                default: 'Body Sensing',
+                description: 'Name of body sensing extension'
             }),
             blockIconURI: blockIconURI,
             menuIconURI: menuIconURI,
@@ -140,6 +140,22 @@ class Scratch3PoseNetBlocks {
                             type: ArgumentType.STRING,
                             menu: 'TILT',
                             defaultValue: 'left'
+                        }
+                    }
+                },
+                {
+                    opcode: 'goToPart',
+                    text: formatMessage({
+                        id: '',
+                        default: 'go to [PART]',
+                        description: ''
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        PART: {
+                            type: ArgumentType.STRING,
+                            menu: 'PART',
+                            defaultValue: 0
                         }
                     }
                 },
@@ -238,6 +254,11 @@ class Scratch3PoseNetBlocks {
             return this.headDirection() > (90 + TILT_THRESHOLD);
         }
         return false;
+    }
+
+    goToPart (args, util) {
+        const pos = this.getPartPosition(args.PART);
+        util.target.setXY(pos.x, pos.y);
     }
 
     headDirection () {
