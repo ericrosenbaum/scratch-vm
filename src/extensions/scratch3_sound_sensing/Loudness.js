@@ -1,5 +1,7 @@
 const log = require('../../util/log');
 
+const SMOOTHING = 0.77;
+
 class Loudness {
     /**
      * Instrument and detect a loudness value from a local microphone.
@@ -60,7 +62,13 @@ class Loudness {
         // If the microphone is set up and active, measure the loudness
         if (this.mic && this.audioStream.active) {
             this.micAnalyser.getFloatTimeDomainData(this.micDataArray);
-            return this.getLoudnessOfArray(this.micDataArray);
+            let loudness = this.getLoudnessOfArray(this.micDataArray);
+            // smooth the value, if it is descending
+            if (this._lastMicLoudness) {
+                loudness = Math.max(loudness, this._lastMicLoudness * SMOOTHING);
+            }
+            this._lastMicLoudness = loudness;
+            return loudness;
         }
 
         // if there is no microphone input, return -1
@@ -74,7 +82,13 @@ class Loudness {
             this.projectDataArray = new Float32Array(this.projectAnalyser.fftSize);
         }
         this.projectAnalyser.getFloatTimeDomainData(this.projectDataArray);
-        return this.getLoudnessOfArray(this.projectDataArray);
+        let loudness = this.getLoudnessOfArray(this.projectDataArray);
+        // smooth the value, if it is descending
+        if (this._lastProjectLoudness) {
+            loudness = Math.max(loudness, this._lastProjectLoudness * SMOOTHING);
+        }
+        this._lastProjectLoudness = loudness;
+        return loudness;
     }
 
     getLoudnessOfArray (array) {
@@ -84,11 +98,6 @@ class Loudness {
             sum += Math.pow(array[i], 2);
         }
         let rms = Math.sqrt(sum / array.length);
-        // smooth the value, if it is descending
-        if (this._lastValue) {
-            rms = Math.max(rms, this._lastValue * 0.6);
-        }
-        this._lastValue = rms;
 
         // Scale the measurement so it's more sensitive to quieter sounds
         rms *= 1.63;
