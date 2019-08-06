@@ -3,6 +3,7 @@ const formatMessage = require('format-message');
 const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const Timer = require('../../util/timer');
+const Cast = require('../../util/cast');
 
 const Loudness = require('./Loudness');
 
@@ -78,6 +79,21 @@ class Scratch3SoundSensingBlocks {
             blockIconURI: blockIconURI,
             menuIconURI: menuIconURI,
             blocks: [
+                {
+                    opcode: 'whenLoud',
+                    text: formatMessage({
+                        id: 'soundSensing.whenLoud',
+                        default: 'when loudness > [LOUDNESS]',
+                        description: 'when the loudness is greater than the specified threshold'
+                    }),
+                    blockType: BlockType.HAT,
+                    arguments: {
+                        LOUDNESS: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 10
+                        }
+                    }
+                },
                 {
                     opcode: 'setInputSource',
                     text: formatMessage({
@@ -174,8 +190,9 @@ class Scratch3SoundSensingBlocks {
         return this._cachedLoudness;
     }
 
-    isLoud () {
-        return this.getLoudness() > 10;
+    whenLoud (args) {
+        const loudness = Cast.toNumber(args.LOUDNESS);
+        return this.getLoudness() > loudness;
     }
 
 }
