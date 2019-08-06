@@ -65,7 +65,7 @@ class Loudness {
             let loudness = this.getLoudnessOfArray(this.micDataArray);
             // smooth the value, if it is descending
             if (this._lastMicLoudness) {
-                loudness = Math.max(loudness, this._lastMicLoudness * SMOOTHING);
+                loudness = Math.round(Math.max(loudness, this._lastMicLoudness * SMOOTHING));
             }
             this._lastMicLoudness = loudness;
             return loudness;
@@ -85,7 +85,7 @@ class Loudness {
         let loudness = this.getLoudnessOfArray(this.projectDataArray);
         // smooth the value, if it is descending
         if (this._lastProjectLoudness) {
-            loudness = Math.max(loudness, this._lastProjectLoudness * SMOOTHING);
+            loudness = Math.round(Math.max(loudness, this._lastProjectLoudness * SMOOTHING));
         }
         this._lastProjectLoudness = loudness;
         return loudness;
