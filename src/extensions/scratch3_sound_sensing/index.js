@@ -28,8 +28,7 @@ const blockIconURI = '';
  */
 const INPUT = {
     microphone: 'microphone',
-    project: 'project',
-    all: 'all'
+    project: 'project'
 };
 
 /**
@@ -44,8 +43,6 @@ class Scratch3SoundSensingBlocks {
          */
         this.runtime = runtime;
 
-        this.input = INPUT.microphone;
-
         /**
          * The timer utility.
          * @type {Timer}
@@ -56,13 +53,15 @@ class Scratch3SoundSensingBlocks {
          * The stored loudness measurement.
          * @type {number}
          */
-        this._cachedLoudness = -1;
+        this._cachedMicrophoneLoudness = -1;
+        this._cachedProjectLoudness = -1;
 
         /**
          * The time of the most recent loudness measurement.
          * @type {number}
          */
-        this._cachedLoudnessTimestamp = 0;
+        this._cachedMicrophoneLoudnessTimestamp = 0;
+        this._cachedProjectLoudnessTimestamp = 0;
     }
 
     /**
@@ -83,11 +82,16 @@ class Scratch3SoundSensingBlocks {
                     opcode: 'whenLoud',
                     text: formatMessage({
                         id: 'soundSensing.whenLoud',
-                        default: 'when loudness > [LOUDNESS]',
+                        default: 'when [INPUT] loudness > [LOUDNESS]',
                         description: 'when the loudness is greater than the specified threshold'
                     }),
                     blockType: BlockType.HAT,
                     arguments: {
+                        INPUT: {
+                            type: ArgumentType.STRING,
+                            menu: 'INPUT',
+                            defaultValue: INPUT.microphone
+                        },
                         LOUDNESS: {
                             type: ArgumentType.NUMBER,
                             defaultValue: 10
@@ -95,28 +99,21 @@ class Scratch3SoundSensingBlocks {
                     }
                 },
                 {
-                    opcode: 'setInputSource',
-                    text: formatMessage({
-                        id: 'soundSensing.setInputSourceBlock',
-                        default: 'listen to [INPUT]',
-                        description: 'Choose a sound source to listen to.'
-                    }),
-                    blockType: BlockType.COMMAND,
-                    arguments: {
-                        INPUT: {
-                            type: ArgumentType.STRING,
-                            menu: 'INPUT',
-                            defaultValue: INPUT.microphone
-                        }
-                    }
-                },
-                {
-                    opcode: 'getLoudness',
+                    opcode: 'getMicrophoneLoudness',
                     blockType: BlockType.REPORTER,
                     text: formatMessage({
-                        id: 'soundSensing.getLoudness',
-                        default: 'loudness',
-                        description: 'get the loudness'
+                        id: 'soundSensing.getMicrophoneLoudness',
+                        default: 'microphone loudness',
+                        description: 'get the loudness of the sound measured by the microphone'
+                    })
+                },
+                {
+                    opcode: 'getProjectLoudness',
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: 'soundSensing.getProjectLoudness',
+                        default: 'project loudness',
+                        description: 'get the loudness of the sound produced by the project'
                     })
                 }
             ],
@@ -139,14 +136,6 @@ class Scratch3SoundSensingBlocks {
                                 description: 'The project.'
                             }),
                             value: INPUT.project
-                        },
-                        {
-                            text: formatMessage({
-                                id: 'soundSensing.all',
-                                default: 'all',
-                                description: 'All sounds.'
-                            }),
-                            value: INPUT.all
                         }
                     ]
                 }
@@ -154,11 +143,20 @@ class Scratch3SoundSensingBlocks {
         };
     }
 
-    setInputSource (args) {
-        this.input = args.INPUT;
+    whenLoud (args) {
+        const loudness = Cast.toNumber(args.LOUDNESS);
+        return this.getLoudness(args.INPUT) > loudness;
     }
 
-    getLoudness () {
+    getMicrophoneLoudness () {
+        return this.getLoudness(INPUT.microphone);
+    }
+
+    getProjectLoudness () {
+        return this.getLoudness(INPUT.project);
+    }
+
+    getLoudness (input) {
         if (typeof this.runtime.audioEngine === 'undefined') return -1;
         if (this.runtime.currentStepTime === null) return -1;
         if (!this.loudness) {
@@ -166,34 +164,25 @@ class Scratch3SoundSensingBlocks {
             this.loudness = new Loudness(engine.audioContext, engine.inputNode);
         }
 
-        // Only measure loudness once per step
-        const timeSinceLoudness = this._timer.time() - this._cachedLoudnessTimestamp;
-        if (timeSinceLoudness < this.runtime.currentStepTime) {
-            return this._cachedLoudness;
-        }
-
-        this._cachedLoudnessTimestamp = this._timer.time();
-        switch (this.input) {
+        let timeSinceLoudness = 0;
+        switch (input) {
         case INPUT.microphone:
-            this._cachedLoudness = this.loudness.getMicrophoneLoudness();
-            break;
+            timeSinceLoudness = this._timer.time() - this._cachedMicrophoneLoudnessTimestamp;
+            if (timeSinceLoudness < this.runtime.currentStepTime) {
+                return this._cachedMicrophoneLoudness;
+            }
+            this._cachedMicrophoneLoudness = this.loudness.getMicrophoneLoudness();
+            this._cachedMicrophoneLoudnessTimestamp = this._timer.time();
+            return this._cachedMicrophoneLoudness;
         case INPUT.project:
-            this._cachedLoudness = this.loudness.getProjectLoudness();
-            break;
-        case INPUT.all:
-            this._cachedLoudness = Math.max(
-                this.loudness.getMicrophoneLoudness(),
-                this.loudness.getProjectLoudness()
-            );
-            break;
+            timeSinceLoudness = this._timer.time() - this._cachedProjectLoudnessTimestamp;
+            if (timeSinceLoudness < this.runtime.currentStepTime) {
+                return this._cachedProjectLoudness;
+            }
+            this._cachedProjectLoudness = this.loudness.getProjectLoudness();
+            this._cachedProjectLoudnessTimestamp = this._timer.time();
+            return this._cachedProjectLoudness;
         }
-        return this._cachedLoudness;
     }
-
-    whenLoud (args) {
-        const loudness = Cast.toNumber(args.LOUDNESS);
-        return this.getLoudness() > loudness;
-    }
-
 }
 module.exports = Scratch3SoundSensingBlocks;
