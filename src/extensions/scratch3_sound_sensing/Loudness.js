@@ -82,12 +82,7 @@ class Loudness {
     getProjectLoudness () {
         if (!this.projectAnalyser) {
             this.projectAnalyser = this.audioContext.createAnalyser();
-            this.filter = this.audioContext.createBiquadFilter();
-            this.filter.type = 'highpass';
-            this.filter.frequency.value = 200;
-
-            this.projectInput.connect(this.filter);
-            this.filter.connect(this.projectAnalyser);
+            this.projectInput.connect(this.projectAnalyser);
             this.projectDataArray = new Float32Array(this.projectAnalyser.fftSize);
         }
         this.projectAnalyser.getFloatTimeDomainData(this.projectDataArray);
