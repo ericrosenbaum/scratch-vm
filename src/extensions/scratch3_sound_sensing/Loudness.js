@@ -75,6 +75,10 @@ class Loudness {
         return -1;
     }
 
+    /*
+     * Get the loudness of sounds being produced by the project.
+     * @return {number} loudness scaled 0 to 100
+     */
     getProjectLoudness () {
         if (!this.projectAnalyser) {
             this.projectAnalyser = this.audioContext.createAnalyser();
