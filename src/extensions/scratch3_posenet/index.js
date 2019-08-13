@@ -32,7 +32,12 @@ class Scratch3PoseNetBlocks {
          */
         this.runtime = runtime;
 
-        Posenet.load(0.5).then(net => {
+        Posenet.load({
+            architecture: 'MobileNetV1',
+            outputStride: 8,
+            inputResolution: 257,
+            multiplier: 0.5
+        }).then(net => {
             this.posenet = net;
             if (this.runtime.ioDevices) {
                 // Kick off looping the analysis logic.
