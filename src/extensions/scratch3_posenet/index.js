@@ -35,7 +35,7 @@ class Scratch3PoseNetBlocks {
         Posenet.load({
             architecture: 'MobileNetV1',
             outputStride: 16,
-            inputResolution: 257,
+            inputResolution: 161,
             multiplier: 0.5
         }).then(net => {
             this.posenet = net;
@@ -61,7 +61,7 @@ class Scratch3PoseNetBlocks {
      * @type {number}
      */
     static get INTERVAL () {
-        return 100;
+        return 50;
     }
 
     /**
