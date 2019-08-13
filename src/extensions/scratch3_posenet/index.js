@@ -228,7 +228,7 @@ class Scratch3PoseNetBlocks {
         const defaultPos = {x: 0, y: 0};
         if (!this.currentPose) return defaultPos;
         if (!this.currentPose.keypoints) return defaultPos;
-        const result = this.currentPose.keypoints[part];
+        const result = this.currentPose.keypoints[Number(part)];
         if (result) {
             return this.toScratchCoords(result.position);
         }
