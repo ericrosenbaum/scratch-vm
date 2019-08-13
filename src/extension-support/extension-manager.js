@@ -24,7 +24,7 @@ const builtinExtensions = {
     makeymakey: () => require('../extensions/scratch3_makeymakey'),
     boost: () => require('../extensions/scratch3_boost'),
     gdxfor: () => require('../extensions/scratch3_gdx_for'),
-    posenet: () => require('../extensions/scratch3_posenet')
+    bodySensing: () => require('../extensions/scratch3_posenet')
 };
 
 /**
