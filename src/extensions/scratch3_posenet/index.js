@@ -272,7 +272,7 @@ class Scratch3PoseNetBlocks {
         const dx = rightEyePos.x - leftEyePos.x;
         const dy = rightEyePos.y - leftEyePos.y;
         const direction = 90 - MathUtil.radToDeg(Math.atan2(dy, dx));
-        return direction;
+        return Math.round(direction);
     }
 }
 
