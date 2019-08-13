@@ -135,7 +135,7 @@ class Scratch3PoseNetBlocks {
                 {
                     opcode: 'whenTilted',
                     text: formatMessage({
-                        id: '',
+                        id: 'bodySensing.whenTilted',
                         default: 'when head tilts [DIRECTION]',
                         description: ''
                     }),
@@ -151,7 +151,7 @@ class Scratch3PoseNetBlocks {
                 {
                     opcode: 'goToPart',
                     text: formatMessage({
-                        id: '',
+                        id: 'bodySensing.goToPart',
                         default: 'go to [PART]',
                         description: ''
                     }),
@@ -160,14 +160,14 @@ class Scratch3PoseNetBlocks {
                         PART: {
                             type: ArgumentType.STRING,
                             menu: 'PART',
-                            defaultValue: 0
+                            defaultValue: '0'
                         }
                     }
                 },
                 {
                     opcode: 'headDirection',
                     text: formatMessage({
-                        id: '',
+                        id: 'bodySensing.headDirection',
                         default: 'head direction',
                         description: ''
                     }),
@@ -176,7 +176,7 @@ class Scratch3PoseNetBlocks {
                 {
                     opcode: 'partX',
                     text: formatMessage({
-                        id: '',
+                        id: 'bodySensing.partX',
                         default: 'x position of [PART]',
                         description: ''
                     }),
@@ -184,7 +184,7 @@ class Scratch3PoseNetBlocks {
                         PART: {
                             type: ArgumentType.NUMBER,
                             menu: 'PART',
-                            defaultValue: 0
+                            defaultValue: '0'
                         }
                     },
                     blockType: BlockType.REPORTER
@@ -192,7 +192,7 @@ class Scratch3PoseNetBlocks {
                 {
                     opcode: 'partY',
                     text: formatMessage({
-                        id: '',
+                        id: 'bodySensing.partY',
                         default: 'y position of [PART]',
                         description: ''
                     }),
@@ -200,7 +200,7 @@ class Scratch3PoseNetBlocks {
                         PART: {
                             type: ArgumentType.NUMBER,
                             menu: 'PART',
-                            defaultValue: 0
+                            defaultValue: '0'
                         }
                     },
                     blockType: BlockType.REPORTER
@@ -208,13 +208,13 @@ class Scratch3PoseNetBlocks {
             ],
             menus: {
                 PART: [
-                    {text: 'nose', value: 0},
-                    {text: 'left eye', value: 2}, // left/right seem reversed?
-                    {text: 'right eye', value: 1},
-                    {text: 'left ear', value: 4},
-                    {text: 'right ear', value: 3},
-                    {text: 'left wrist', value: 9},
-                    {text: 'right wrist', value: 10}
+                    {text: 'nose', value: '0'},
+                    {text: 'left eye', value: '2'}, // left/right seem reversed?
+                    {text: 'right eye', value: '1'},
+                    {text: 'left ear', value: '4'},
+                    {text: 'right ear', value: '3'},
+                    {text: 'left wrist', value: '9'},
+                    {text: 'right wrist', value: '10'}
                 ],
                 TILT: [
                     {text: 'left', value: 'left'},
