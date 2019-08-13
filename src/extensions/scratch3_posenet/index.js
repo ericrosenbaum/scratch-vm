@@ -213,8 +213,8 @@ class Scratch3PoseNetBlocks {
                     {text: 'right eye', value: '1'},
                     {text: 'left ear', value: '4'},
                     {text: 'right ear', value: '3'},
-                    {text: 'left wrist', value: '9'},
-                    {text: 'right wrist', value: '10'}
+                    {text: 'left wrist', value: '10'}, // also left/right reversed?
+                    {text: 'right wrist', value: '9'}
                 ],
                 TILT: [
                     {text: 'left', value: 'left'},
