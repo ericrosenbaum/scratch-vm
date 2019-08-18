@@ -119,12 +119,12 @@ class Scratch3PhysicsBlocks {
     }
 
     _onTargetCreated (newTarget, sourceTarget) {
-        if (sourceTarget) {
-            const state = sourceTarget.getCustomState(Scratch3PhysicsBlocks.STATE_KEY);
-            if (state) {
-                newTarget.setCustomState(Scratch3PhysicsBlocks.STATE_KEY, Clone.simple(state));
-            }
-        }
+        // if (sourceTarget) {
+        //     const state = sourceTarget.getCustomState(Scratch3PhysicsBlocks.STATE_KEY);
+        //     if (state) {
+        //         newTarget.setCustomState(Scratch3PhysicsBlocks.STATE_KEY, Clone.simple(state));
+        //     }
+        // }
     }
 
     _disableAll () {
@@ -134,6 +134,7 @@ class Scratch3PhysicsBlocks {
             state.enabled = false;
             state.body = null;
         }
+        // Matter.World.clear(this.engine.world);
     }
 
     start () {
@@ -141,46 +142,21 @@ class Scratch3PhysicsBlocks {
     }
 
     step () {
-        // for each target, if it has no body, create one, and add it to its custom state
-        for (let i = 1; i < this.runtime.targets.length; i++) {
-            const target = this.runtime.targets[i];
-            const state = this._getPhysicsState(target);
-            if (!state.body && state.enabled) {
-                const bounds = target.getBounds();
-                const width = bounds.right - bounds.left;
-                const height = bounds.top - bounds.bottom;
-                const options = {
-                    restitution: 0.8
-                };
-                const hull = this.runtime.renderer._getConvexHullPointsForDrawable(target.drawableID);
-                let body;
-                let center;
-                if (hull.length > 0) {
-                    let vertices = hull.map(p => ({x: p[0], y: p[1]}));
-                    vertices = Matter.Vertices.hull(vertices);
-                    body = this.Bodies.fromVertices(target.x, target.y, vertices, options);
-                    // center = Matter.Vertices.centre(vertices);
-                } else {
-                    body = this.Bodies.rectangle(target.x, target.y, width, height, options);
-                    // center = {x: width / 2, y: height / 2};
-                }
-
-                // todo: set the rotation center of the sprite to the matter center?
-                // target.sprite.costumes[target.currentCostume].rotationCenterX = center.x;
-                // target.sprite.costumes[target.currentCostume].rotationCenterY = center.y;
-                // target.updateAllDrawableProperties();
-
-                this.World.add(this.engine.world, body);
-                state.body = body;
-                this.bodies.set(target.id, body);
-            }
-        }
+        // for each target, if it has no body, create one
+        // for (let i = 1; i < this.runtime.targets.length; i++) {
+        //     const target = this.runtime.targets[i];
+        //     const state = this._getPhysicsState(target);
+        //     if (!state.body && state.enabled) {
+        //         this.enableTarget(target);
+        //     }
+        // }
 
         for (const [id, body] of this.bodies) {
             const target = this.runtime.getTargetById(id);
             if (target) {
                 const state = this._getPhysicsState(target);
                 if (!state.enabled) {
+                    // remove bodies for targets with physics disabled
                     this.World.remove(this.engine.world, body);
                     this.bodies.delete(id);
                 }
@@ -226,12 +202,35 @@ class Scratch3PhysicsBlocks {
         for (let i = 1; i < this.runtime.targets.length; i++) {
             const target = this.runtime.targets[i];
             const state = this._getPhysicsState(target);
-            if (!state.enabled) continue;
+            if (!state.enabled || !state.body) continue;
             const body = state.body;
             target.setXY(body.position.x, body.position.y);
             target.setDirection(this._matterToScratchAngle(body.angle));
         }
         window.requestAnimationFrame(this.step.bind(this));
+    }
+
+    enableTarget (target) {
+        const bounds = target.getBounds();
+        const width = bounds.right - bounds.left;
+        const height = bounds.top - bounds.bottom;
+        const options = {
+            restitution: 0.8
+        };
+        const hull = this.runtime.renderer._getConvexHullPointsForDrawable(target.drawableID);
+        let body;
+        if (hull.length > 0) {
+            let vertices = hull.map(p => ({x: p[0], y: p[1]}));
+            vertices = Matter.Vertices.hull(vertices);
+            body = this.Bodies.fromVertices(target.x, target.y, vertices, options);
+        } else {
+            body = this.Bodies.rectangle(target.x, target.y, width, height, options);
+        }
+
+        this.World.add(this.engine.world, body);
+        this.bodies.set(target.id, body);
+
+        return body;
     }
 
     _matterToScratchAngle (matterAngleRadians) {
@@ -376,6 +375,7 @@ class Scratch3PhysicsBlocks {
     pushXY (args, util) {
         // todo: clamp the force
         const state = this._getPhysicsState(util.target);
+        if (!state.enabled || !state.body) return;
         const x = Cast.toNumber(args.X) * this.forceScale;
         const y = Cast.toNumber(args.Y) * this.forceScale;
         Matter.Body.applyForce(state.body, state.body.position, {x: x, y: y});
@@ -384,6 +384,7 @@ class Scratch3PhysicsBlocks {
     push (args, util) {
         // todo: clamp the force
         const state = this._getPhysicsState(util.target);
+        if (!state.enabled || !state.body) return;
         const force = Cast.toNumber(args.FORCE);
         const radians = this._scratchToMatterAngle(util.target.direction);
         const fx = force * Math.cos(radians) * this.forceScale;
@@ -393,12 +394,14 @@ class Scratch3PhysicsBlocks {
 
     pushX (args, util) {
         const state = this._getPhysicsState(util.target);
+        if (!state.enabled || !state.body) return;
         const force = Cast.toNumber(args.FORCE) * this.forceScale;
         Matter.Body.applyForce(state.body, state.body.position, {x: force, y: 0});
     }
 
     pushY (args, util) {
         const state = this._getPhysicsState(util.target);
+        if (!state.enabled || !state.body) return;
         const force = Cast.toNumber(args.FORCE) * this.forceScale;
         Matter.Body.applyForce(state.body, state.body.position, {x: 0, y: force});
     }
@@ -406,6 +409,7 @@ class Scratch3PhysicsBlocks {
     spin (args, util) {
         // todo: clamp the force
         const state = this._getPhysicsState(util.target);
+        if (!state.enabled || !state.body) return;
         const force = Cast.toNumber(args.FORCE) * -1;
         state.body.torque = force;
     }
@@ -419,6 +423,7 @@ class Scratch3PhysicsBlocks {
     getSpeed (args, util) {
         // todo: something odd about this - when gravity is on, speed is 1.1 at rest
         const state = this._getPhysicsState(util.target);
+        if (!state.enabled || !state.body) return;
         const speed = state.body.speed;
         const fixed = parseFloat(speed.toFixed(1));
         return fixed;
@@ -426,11 +431,13 @@ class Scratch3PhysicsBlocks {
 
     lockToStage (args, util) {
         const state = this._getPhysicsState(util.target);
+        if (!state.enabled || !state.body) return;
         Matter.Body.setStatic(state.body, true);
     }
 
     hingeToStage (args, util) {
         const state = this._getPhysicsState(util.target);
+        if (!state.enabled || !state.body) return;
         const constraint = Matter.Constraint.create({
             bodyA: state.body,
             pointB: Matter.Vector.clone(state.body.position),
@@ -444,9 +451,10 @@ class Scratch3PhysicsBlocks {
         const state = this._getPhysicsState(util.target);
         if (args.ON_OFF === 'on') {
             state.enabled = true;
+            const body = this.enableTarget(util.target);
+            state.body = body;
         } else {
             state.enabled = false;
-            state.body = null;
         }
     }
 
