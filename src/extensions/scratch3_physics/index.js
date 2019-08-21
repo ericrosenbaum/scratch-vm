@@ -63,6 +63,7 @@ class Scratch3PhysicsBlocks {
         // a map of scratch target ids to matter bodies
         this.bodies = new Map();
 
+        // TODO: this requires event triggered hats
         // fire events on collision between any pair of bodies
         this.Events.on(this.engine, 'collisionStart', event => {
             // for each pair, look up each body in this.bodies
@@ -119,12 +120,16 @@ class Scratch3PhysicsBlocks {
     }
 
     _onTargetCreated (newTarget, sourceTarget) {
-        // if (sourceTarget) {
-        //     const state = sourceTarget.getCustomState(Scratch3PhysicsBlocks.STATE_KEY);
-        //     if (state) {
-        //         newTarget.setCustomState(Scratch3PhysicsBlocks.STATE_KEY, Clone.simple(state));
-        //     }
-        // }
+        if (sourceTarget) {
+            const state = sourceTarget.getCustomState(Scratch3PhysicsBlocks.STATE_KEY);
+            if (state && state.enabled) {
+                window.setTimeout(() => {
+                    const newState = newTarget.getCustomState(Scratch3PhysicsBlocks.STATE_KEY);
+                    newState.enabled = true;
+                    newState.body = this.enableTarget(newTarget);
+                }, 60);
+            }
+        }
     }
 
     _disableAll () {
@@ -219,8 +224,9 @@ class Scratch3PhysicsBlocks {
         };
         const hull = this.runtime.renderer._getConvexHullPointsForDrawable(target.drawableID);
         let body;
+        console.log(hull);
         if (hull.length > 0) {
-            let vertices = hull.map(p => ({x: p[0], y: p[1]}));
+            let vertices = hull.map(p => ({x: p[0], y: p[1] * -1}));
             vertices = Matter.Vertices.hull(vertices);
             body = this.Bodies.fromVertices(target.x, target.y, vertices, options);
         } else {
@@ -358,6 +364,15 @@ class Scratch3PhysicsBlocks {
                             defaultValue: 0
                         }
                     }
+                },
+                {
+                    opcode: 'showDebugRenderer',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'physics.showDebug',
+                        default: 'show debug renderer (use before enabling)',
+                        description: ''
+                    })
                 }
             ],
             menus: {
@@ -450,9 +465,10 @@ class Scratch3PhysicsBlocks {
     onOff (args, util) {
         const state = this._getPhysicsState(util.target);
         if (args.ON_OFF === 'on') {
-            state.enabled = true;
-            const body = this.enableTarget(util.target);
-            state.body = body;
+            if (!state.enabled) {
+                state.enabled = true;
+                state.body = this.enableTarget(util.target);
+            }
         } else {
             state.enabled = false;
         }
@@ -460,6 +476,37 @@ class Scratch3PhysicsBlocks {
 
     whenCollides () {
         return false;
+    }
+
+    showDebugRenderer () {
+        if (!this.debugRendererShowing) {
+            this.debugRendererShowing = true;
+            // this has got to be the wrong way to get the stage element...
+            let element = document.getElementsByClassName('stage_stage-wrapper_eRRuk')[0];
+            element = element.children[0].children[0]; // IDK go away it's fine
+
+            this.render = Matter.Render.create({
+                element: element,
+                engine: this.engine,
+                options: {
+                    width: 480,
+                    height: 360,
+                    showAngleIndicator: true,
+                    showCollisions: true,
+                    showVelocity: true
+                }
+            });
+            Matter.Render.lookAt(this.render, {
+                min: {x: -240, y: -180},
+                max: {x: 240, y: 180}
+            });
+
+            Matter.Render.run(this.render);
+
+            // try to get it to sit on top of the stage and look right
+            this.render.canvas.style.transform = 'scale(1,-1) translate(0px, 360px)';
+            this.render.canvas.style.background = '';
+        }
     }
 }
 
