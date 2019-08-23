@@ -10,6 +10,16 @@ const decomp = require('poly-decomp');
 window.decomp = decomp;
 const Matter = require('matter-js');
 
+/*
+things to work on:
+
+- pushes and spins use force scaled by body's mass
+- maybe don't need the enabled flag? just use body is not null?
+- update the convex hull when costume changes
+- collision hats
+
+*/
+
 /**
  * Icon png to be displayed at the left edge of each extension block, encoded as a data URI.
  * @type {string}
@@ -52,7 +62,6 @@ class Scratch3PhysicsBlocks {
         this.forceScale = 0.01;
 
         // add the ground and walls to the world
-        // todo: make the walls much taller than the stage, so you can't jump up and over them
         const wallSize = 1000;
         this.ground = this.Bodies.rectangle(0, -180 - (wallSize / 2), wallSize, wallSize, {isStatic: true});
         this.leftWall = this.Bodies.rectangle(-240 - (wallSize / 2), 0, wallSize, wallSize, {isStatic: true});
@@ -136,10 +145,19 @@ class Scratch3PhysicsBlocks {
         for (let i = 1; i < this.runtime.targets.length; i++) {
             const target = this.runtime.targets[i];
             const state = this._getPhysicsState(target);
+            if (state.enabled) {
+                this._disableTarget(target);
+            }
             state.enabled = false;
             state.body = null;
         }
         // Matter.World.clear(this.engine.world);
+    }
+
+    _disableTarget (target) {
+        const state = this._getPhysicsState(target);
+        this.World.remove(this.engine.world, state.body);
+        this.bodies.delete(state.body.id);
     }
 
     start () {
@@ -224,7 +242,6 @@ class Scratch3PhysicsBlocks {
         };
         const hull = this.runtime.renderer._getConvexHullPointsForDrawable(target.drawableID);
         let body;
-        console.log(hull);
         if (hull.length > 0) {
             let vertices = hull.map(p => ({x: p[0], y: p[1] * -1}));
             vertices = Matter.Vertices.hull(vertices);
@@ -470,7 +487,9 @@ class Scratch3PhysicsBlocks {
                 state.body = this.enableTarget(util.target);
             }
         } else {
+            this._disableTarget(util.target);
             state.enabled = false;
+            state.body = null;
         }
     }
 
