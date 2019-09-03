@@ -50,6 +50,7 @@ class Scratch3PhysicsBlocks {
         this.Engine = Matter.Engine;
         this.World = Matter.World;
         this.Bodies = Matter.Bodies;
+        this.Body = Matter.Body;
         this.Events = Matter.Events;
 
         // create an engine
@@ -59,7 +60,7 @@ class Scratch3PhysicsBlocks {
         this.engine.world.gravity.y = -1;
 
         // scale factor for force applied by push and pushXY blocks
-        this.forceScale = 0.01;
+        this.forceScale = 0.001;
 
         // add the ground and walls to the world
         const wallSize = 1000;
@@ -408,8 +409,8 @@ class Scratch3PhysicsBlocks {
         // todo: clamp the force
         const state = this._getPhysicsState(util.target);
         if (!state.enabled || !state.body) return;
-        const x = Cast.toNumber(args.X) * this.forceScale;
-        const y = Cast.toNumber(args.Y) * this.forceScale;
+        const x = Cast.toNumber(args.X) * state.body.mass * this.forceScale;
+        const y = Cast.toNumber(args.Y) * state.body.mass * this.forceScale;
         Matter.Body.applyForce(state.body, state.body.position, {x: x, y: y});
     }
 
@@ -417,32 +418,19 @@ class Scratch3PhysicsBlocks {
         // todo: clamp the force
         const state = this._getPhysicsState(util.target);
         if (!state.enabled || !state.body) return;
-        const force = Cast.toNumber(args.FORCE);
+        let force = Cast.toNumber(args.FORCE);
+        force = force * state.body.mass * this.forceScale;
         const radians = this._scratchToMatterAngle(util.target.direction);
-        const fx = force * Math.cos(radians) * this.forceScale;
-        const fy = force * Math.sin(radians) * this.forceScale;
+        const fx = force * Math.cos(radians);
+        const fy = force * Math.sin(radians);
         Matter.Body.applyForce(state.body, state.body.position, {x: fx, y: fy});
-    }
-
-    pushX (args, util) {
-        const state = this._getPhysicsState(util.target);
-        if (!state.enabled || !state.body) return;
-        const force = Cast.toNumber(args.FORCE) * this.forceScale;
-        Matter.Body.applyForce(state.body, state.body.position, {x: force, y: 0});
-    }
-
-    pushY (args, util) {
-        const state = this._getPhysicsState(util.target);
-        if (!state.enabled || !state.body) return;
-        const force = Cast.toNumber(args.FORCE) * this.forceScale;
-        Matter.Body.applyForce(state.body, state.body.position, {x: 0, y: force});
     }
 
     spin (args, util) {
         // todo: clamp the force
         const state = this._getPhysicsState(util.target);
         if (!state.enabled || !state.body) return;
-        const force = Cast.toNumber(args.FORCE) * -1;
+        const force = Cast.toNumber(args.FORCE) * state.body.mass * this.forceScale * -1;
         state.body.torque = force;
     }
 
