@@ -2,6 +2,7 @@ const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
 const Clone = require('../../util/clone');
+const RenderedTarget = require('../../sprites/rendered-target');
 const log = require('../../util/log');
 const formatMessage = require('format-message');
 const MathUtil = require('../../util/math-util');
@@ -13,10 +14,12 @@ const Matter = require('matter-js');
 /*
 things to work on:
 
+- offset hull using costume center?
 - pushes and spins use force scaled by body's mass
 - maybe don't need the enabled flag? just use body is not null?
 - update the convex hull when costume changes
 - collision hats
+- use the sprite center instead of the center of mass for spin and hinge
 
 */
 
@@ -254,7 +257,39 @@ class Scratch3PhysicsBlocks {
         this.World.add(this.engine.world, body);
         this.bodies.set(target.id, body);
 
+        // todo: also remove this listener on disable
+        target.addListener(RenderedTarget.EVENT_TARGET_COSTUME_CHANGE, this._updateHull.bind(this));
+
         return body;
+    }
+
+    _updateHull (target) {
+        const state = this._getPhysicsState(target);
+        if (!state.enabled || !state.body) return;
+        const hull = this.runtime.renderer._getConvexHullPointsForDrawable(target.drawableID);
+        if (hull.length > 0) {
+            let vertices = hull.map(p => ({x: p[0], y: p[1] * -1}));
+            vertices = Matter.Vertices.hull(vertices);
+
+            this.World.remove(this.engine.world, state.body);
+            this.bodies.delete(state.body.id);
+
+            const options = {
+                restitution: 0.8
+            };
+            state.body = this.Bodies.fromVertices(target.x, target.y, vertices, options);
+
+            // const xOffset = target.sprite.costumes_[target.currentCostume].rotationCenterX;
+            // const yOffset = target.sprite.costumes_[target.currentCostume].rotationCenterY;
+            // state.body.positionPrev.x -= xOffset;
+            // state.body.positionPrev.y -= yOffset;
+            // state.body.position.x -= xOffset;
+            // state.body.position.y -= yOffset;
+
+            this.World.add(this.engine.world, state.body);
+            this.bodies.set(target.id, state.body);
+
+        }
     }
 
     _matterToScratchAngle (matterAngleRadians) {

@@ -222,6 +222,10 @@ class RenderedTarget extends Target {
         return 'EVENT_TARGET_VISUAL_CHANGE';
     }
 
+    static get EVENT_TARGET_COSTUME_CHANGE () {
+        return 'EVENT_TARGET_COSTUME_CHANGE';
+    }
+
     /**
      * Rotation style for "all around"/spinning.
      * @type {string}
@@ -484,6 +488,7 @@ class RenderedTarget extends Target {
             this.renderer.updateDrawableProperties(this.drawableID, drawableProperties);
             if (this.visible) {
                 this.emit(RenderedTarget.EVENT_TARGET_VISUAL_CHANGE, this);
+                this.emit(RenderedTarget.EVENT_TARGET_COSTUME_CHANGE, this);
                 this.runtime.requestRedraw();
             }
         }
