@@ -1,3 +1,6 @@
+// const SuperpoweredModule = require('./superpowered.js');
+import SuperpoweredModule from './superpowered.js';
+
 const formatMessage = require('format-message');
 const nets = require('nets');
 
@@ -135,6 +138,16 @@ class Scratch3Text2SpeechBlocks {
          * @type {Array}
          */
         this._supportedLocales = this._getSupportedLocales();
+
+        this.superpowered = SuperpoweredModule({
+            licenseKey: 'ExampleLicenseKey-WillExpire-OnNextUpdate',
+            enableAudioTimeStretching: true,
+
+            onReady: function () {
+                console.log('superpowered loaded');
+            }
+        });
+        console.log(this.superpowered);
     }
 
     /**
