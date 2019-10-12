@@ -138,14 +138,32 @@ class Scratch3Text2SpeechBlocks {
          */
         this._supportedLocales = this._getSupportedLocales();
 
+        this.superpoweredNode = null;
+
         this.superpowered = SuperpoweredModule.default({
             licenseKey: 'ExampleLicenseKey-WillExpire-OnNextUpdate',
             enableAudioTimeStretching: true,
 
-            onReady: function () {
+            onReady: () => {
                 console.log('superpowered loaded');
+                this.startSuperpowered();
             }
         });
+    }
+
+    startSuperpowered () {
+        const context = this.runtime.audioEngine.audioContext;
+        const url = './static/processor.js';
+        this.superpowered.createAudioNode(context, url, 'MyProcessor',
+            newNode => {
+                console.log('superpowered node ready');
+                this.superpoweredNode = newNode;
+            },
+            // runs when the audio node sends a message
+            message => {
+              console.log('Message received from the audio node: ' + message);
+            }
+        );
     }
 
     /**
@@ -709,21 +727,46 @@ class Scratch3Text2SpeechBlocks {
                     }
                 };
                 this.runtime.audioEngine.decodeSoundPlayer(sound).then(soundPlayer => {
-                    this._soundPlayers.set(soundPlayer.id, soundPlayer);
 
-                    soundPlayer.setPlaybackRate(playbackRate);
-
-                    // Increase the volume
-                    const engine = this.runtime.audioEngine;
-                    const chain = engine.createEffectChain();
-                    chain.set('volume', SPEECH_VOLUME);
-                    soundPlayer.connect(chain);
-
-                    soundPlayer.play();
-                    soundPlayer.on('stop', () => {
-                        this._soundPlayers.delete(soundPlayer.id);
-                        resolve();
+                    this.superpoweredNode.sendMessageToAudioScope({
+                        left: soundPlayer.buffer.getChannelData(0),
+                        right: soundPlayer.buffer.getChannelData(0)
                     });
+
+                    const intervalSemitones = 12 * Math.log(playbackRate) / Math.log(2);
+                    this.superpoweredNode.sendMessageToAudioScope({
+                        pitchShift: intervalSemitones * 1
+                    });
+
+                    const context = this.runtime.audioEngine.audioContext;
+                    const gainNode = context.createGain();
+                    gainNode.gain.value = 2.5;
+
+                    this.superpoweredNode.connect(gainNode);
+                    gainNode.connect(context.destination);
+
+                    window.clearTimeout(this.endedTimeout);
+                    const durationMs = soundPlayer.buffer.duration * 1000;
+                    this.endedTimeout = window.setTimeout(() => {
+                        this.superpoweredNode.disconnect();
+                        resolve();
+                    }, durationMs);
+
+                    // this._soundPlayers.set(soundPlayer.id, soundPlayer);
+                    //
+                    // soundPlayer.setPlaybackRate(playbackRate);
+                    //
+                    // // Increase the volume
+                    // const engine = this.runtime.audioEngine;
+                    // const chain = engine.createEffectChain();
+                    // chain.set('volume', SPEECH_VOLUME);
+                    // soundPlayer.connect(chain);
+                    //
+                    // soundPlayer.play();
+                    // soundPlayer.on('stop', () => {
+                    //     this._soundPlayers.delete(soundPlayer.id);
+                    //     resolve();
+                    // });
                 });
             });
         });
