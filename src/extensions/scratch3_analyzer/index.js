@@ -23,6 +23,11 @@ const menuIconURI = '';
 // eslint-disable-next-line max-len
 const blockIconURI = '';
 
+const musicalChordNames = [
+    'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', /// major
+    'Am', 'A#m', 'Bm', 'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m' /// minor
+];
+
 /**
  * Class for the text2speech blocks.
  * @constructor
@@ -40,11 +45,22 @@ class Scratch3AnalyzerBlocks {
         this.superpowered = SuperpoweredModule.default({
             licenseKey: 'ExampleLicenseKey-WillExpire-OnNextUpdate',
             enableAudioAnalysis: true,
+            enableAudioEffects: true,
             onReady: () => {
                 console.log('superpowered loaded');
                 this.startSuperpowered();
             }
         });
+
+        // soundplayer for the most recently played sound
+        this.player = null;
+
+        this.tempo = -1;
+
+        this.beatInterval = null;
+        this.beatFlag = false;
+
+        this.keyIndex = -1;
     }
 
     startSuperpowered () {
@@ -81,7 +97,7 @@ class Scratch3AnalyzerBlocks {
                     text: formatMessage({
                         id: 'analyzer.playAndWaitBlock',
                         default: 'play sound [SOUND] until done',
-                        description: 'Speak some words.'
+                        description: ''
                     }),
                     blockType: BlockType.COMMAND,
                     arguments: {
@@ -90,6 +106,42 @@ class Scratch3AnalyzerBlocks {
                             defaultValue: 0
                         }
                     }
+                },
+                {
+                    opcode: 'whenABeatPlayed',
+                    text: formatMessage({
+                        id: 'analyzer.whenABeatPlayed',
+                        default: 'when a beat played',
+                        description: ''
+                    }),
+                    blockType: BlockType.HAT
+                },
+                {
+                    opcode: 'getTempo',
+                    text: formatMessage({
+                        id: 'analyzer.getTempo',
+                        default: 'tempo',
+                        description: 'get the measured tempo of the music'
+                    }),
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'getKey',
+                    text: formatMessage({
+                        id: 'analyzer.getKey',
+                        default: 'musical key',
+                        description: 'get the measured key of the music'
+                    }),
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'getRootNote',
+                    text: formatMessage({
+                        id: 'analyzer.getRootNote',
+                        default: 'root note',
+                        description: 'get the measured root note of the music'
+                    }),
+                    blockType: BlockType.REPORTER
                 }
             ],
             menus: {
@@ -107,16 +159,93 @@ class Scratch3AnalyzerBlocks {
         const {soundId} = sprite.sounds[args.SOUND % len];
         if (sprite.soundBank) {
             const soundPromise = sprite.soundBank.playSound(target, soundId);
-            const player = sprite.soundBank.soundPlayers[soundId];
-            player.outputNode.connect(this.superpoweredNode);
-            this.superpoweredNode.connect(this.runtime.audioEngine.audioContext.destination);
-            window.setInterval(() => {
-                this.superpoweredNode.sendMessageToAudioScope({
-                    analyzer: true
-                });
-            }, 200);
-            return soundPromise;
+            this.player = sprite.soundBank.soundPlayers[soundId];
+
+            const length = this.player.buffer.length;
+            const float32Buffer = this.superpowered.createFloatArray(length);
+
+            const myBuffer = this.player.buffer.getChannelData(0);
+            for (let i = 0; i < myBuffer.length; i++) {
+                float32Buffer.array[i] = myBuffer[i];
+            }
+
+            const interleavedBuffer = this.superpowered.createFloatArray(length * 2);
+
+            this.superpowered.Interleave(
+                float32Buffer.pointer,
+                float32Buffer.pointer,
+                interleavedBuffer.pointer,
+                length
+            );
+
+            this.analyzer = this.superpowered.new('Analyzer',
+                this.runtime.audioEngine.audioContext.sampleRate,
+                this.player.buffer.duration
+            );
+
+            this.analyzer.process(
+                interleavedBuffer.pointer, // Pointer to floating point numbers. 32-bit interleaved stereo input.
+                length, // Number of frames to process.
+                -1 // If this value is not -1, this method can NOT be used in a real-time audio thread.
+            );
+
+            this.analyzer.makeResults(
+                60, // Detected bpm will be more than or equal to this. Recommended value: 60.
+                200, // Detected bpm will be less than or equal to this. Recommended value: 200.
+                0, // If you know the bpm set it here. Use 0 otherwise.
+                0, // Provides a "hint" for the analyzer with this. Use 0 otherwise.
+                true, // True: calculate beatgridStartMs. False: save some CPU with not calculating it.
+                0, // Provides a "hint" for the analyzer with this. Use 0 otherwise.
+                false, // True: make overviewWaveform. False: save some CPU and memory with not making it.
+                false, // True: make the low/mid/high waveforms. False: save some CPU and memory with not making them.
+                true // True: calculate keyIndex. False: save some CPU with not calculating it.
+            );
+
+            console.log(this.analyzer);
+
+            this.tempo = this.analyzer.bpm > 0 ? this.analyzer.bpm : -1;
+
+            this.keyIndex = this.analyzer.keyIndex;
+
+            this.setupBeatTimeouts();
+
+            return soundPromise.then(() => {
+                window.clearInterval(this.beatInterval);
+            });
         }
+    }
+
+    setupBeatTimeouts () {
+        this.beatTimeouts = [];
+        if (this.tempo <= 0) return;
+        const secPerBeat = 60 / this.tempo;
+        this.beatInterval = window.setInterval(() => {
+            this.beatFlag = true;
+        }, secPerBeat * 1000);
+    }
+
+    whenABeatPlayed () {
+        if (this.beatFlag) {
+            window.setTimeout(() => {
+                this.beatFlag = false;
+            }, 60);
+            return true;
+        }
+        return false;
+    }
+
+    getTempo () {
+        return Math.round(this.tempo);
+    }
+
+    getKey () {
+        if (this.keyIndex === -1) return '';
+        return musicalChordNames[this.keyIndex];
+    }
+
+    getRootNote () {
+        if (this.keyIndex === -1) return '';
+        return (this.keyIndex % 12) + 57;
     }
 }
 module.exports = Scratch3AnalyzerBlocks;
