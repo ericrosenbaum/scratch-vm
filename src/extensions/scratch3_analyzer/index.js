@@ -179,7 +179,7 @@ class Scratch3AnalyzerBlocks {
             );
 
             this.analyzer = this.superpowered.new('Analyzer',
-                this.runtime.audioEngine.audioContext.sampleRate,
+                this.player.buffer.sampleRate,
                 this.player.buffer.duration
             );
 
@@ -205,15 +205,26 @@ class Scratch3AnalyzerBlocks {
             drive around
             superpowered bpm: 187.5
             actual bpm: 120
+
+            techno
+            superpowered bpm: 127.659
+            actual bpm: 120
             */
 
+
+
             console.log(this.analyzer);
+            debugger;
 
             this.tempo = this.analyzer.bpm > 0 ? this.analyzer.bpm : -1;
 
             this.keyIndex = this.analyzer.keyIndex;
 
             this.setupBeatTimeouts();
+
+            this.superpowered.destroyFloatArray(float32Buffer);
+            this.superpowered.destroyFloatArray(interleavedBuffer);
+            this.analyzer.destruct();
 
             return soundPromise.then(() => {
                 window.clearInterval(this.beatInterval);
