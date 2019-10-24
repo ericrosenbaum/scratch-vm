@@ -186,7 +186,7 @@ class Scratch3AnalyzerBlocks {
             this.analyzer.process(
                 interleavedBuffer.pointer, // Pointer to floating point numbers. 32-bit interleaved stereo input.
                 length, // Number of frames to process.
-                -1 // If this value is not -1, this method can NOT be used in a real-time audio thread.
+                this.player.buffer.duration
             );
 
             this.analyzer.makeResults(
@@ -200,6 +200,12 @@ class Scratch3AnalyzerBlocks {
                 false, // True: make the low/mid/high waveforms. False: save some CPU and memory with not making them.
                 true // True: calculate keyIndex. False: save some CPU with not calculating it.
             );
+
+            /*
+            drive around
+            superpowered bpm: 187.5
+            actual bpm: 120
+            */
 
             console.log(this.analyzer);
 
@@ -216,7 +222,7 @@ class Scratch3AnalyzerBlocks {
     }
 
     setupBeatTimeouts () {
-        this.beatTimeouts = [];
+        window.clearInterval(this.beatInterval);
         if (this.tempo <= 0) return;
         const secPerBeat = 60 / this.tempo;
         this.beatInterval = window.setInterval(() => {
