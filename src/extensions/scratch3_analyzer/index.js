@@ -152,78 +152,74 @@ class Scratch3AnalyzerBlocks {
     }
 
     getSoundsMenu () {
-        return ['Dance Funky', 'two', 'three'];
-        // return sprite.sounds;
+        return this.runtime.getEditingTarget().sprite.sounds.map(sound => sound.name);
     }
 
     playAndWait (args, util) {
         const {target} = util;
         const {sprite} = target;
-        const len = sprite.sounds.length;
-        if (len === 0) {
-            return;
+        const {soundId} = sprite.sounds.find(sound => sound.name === args.SOUND);
+        if (!soundId) return;
+        if (!sprite.soundBank) return;
+
+        const soundPromise = sprite.soundBank.playSound(target, soundId);
+        this.player = sprite.soundBank.soundPlayers[soundId];
+
+        const length = this.player.buffer.length;
+        const float32Buffer = this.superpowered.createFloatArray(length);
+
+        const myBuffer = this.player.buffer.getChannelData(0);
+        for (let i = 0; i < myBuffer.length; i++) {
+            float32Buffer.array[i] = myBuffer[i];
         }
-        const {soundId} = sprite.sounds[args.SOUND % len];
-        if (sprite.soundBank) {
-            const soundPromise = sprite.soundBank.playSound(target, soundId);
-            this.player = sprite.soundBank.soundPlayers[soundId];
 
-            const length = this.player.buffer.length;
-            const float32Buffer = this.superpowered.createFloatArray(length);
+        const interleavedBuffer = this.superpowered.createFloatArray(length * 2);
 
-            const myBuffer = this.player.buffer.getChannelData(0);
-            for (let i = 0; i < myBuffer.length; i++) {
-                float32Buffer.array[i] = myBuffer[i];
-            }
+        this.superpowered.Interleave(
+            float32Buffer.pointer,
+            float32Buffer.pointer,
+            interleavedBuffer.pointer,
+            length
+        );
 
-            const interleavedBuffer = this.superpowered.createFloatArray(length * 2);
+        this.analyzer = this.superpowered.new('Analyzer',
+            this.player.buffer.sampleRate,
+            this.player.buffer.duration
+        );
 
-            this.superpowered.Interleave(
-                float32Buffer.pointer,
-                float32Buffer.pointer,
-                interleavedBuffer.pointer,
-                length
-            );
+        this.analyzer.process(
+            interleavedBuffer.pointer, // Pointer to floating point numbers. 32-bit interleaved stereo input.
+            length, // Number of frames to process.
+            this.player.buffer.duration
+        );
 
-            this.analyzer = this.superpowered.new('Analyzer',
-                this.player.buffer.sampleRate,
-                this.player.buffer.duration
-            );
+        this.analyzer.makeResults(
+            60, // Detected bpm will be more than or equal to this. Recommended value: 60.
+            200, // Detected bpm will be less than or equal to this. Recommended value: 200.
+            0, // If you know the bpm set it here. Use 0 otherwise.
+            0, // Provides a "hint" for the analyzer with this. Use 0 otherwise.
+            true, // True: calculate beatgridStartMs. False: save some CPU with not calculating it.
+            0, // Provides a "hint" for the analyzer with this. Use 0 otherwise.
+            false, // True: make overviewWaveform. False: save some CPU and memory with not making it.
+            false, // True: make the low/mid/high waveforms. False: save some CPU and memory with not making them.
+            true // True: calculate keyIndex. False: save some CPU with not calculating it.
+        );
 
-            this.analyzer.process(
-                interleavedBuffer.pointer, // Pointer to floating point numbers. 32-bit interleaved stereo input.
-                length, // Number of frames to process.
-                this.player.buffer.duration
-            );
+        console.log(this.analyzer);
 
-            this.analyzer.makeResults(
-                60, // Detected bpm will be more than or equal to this. Recommended value: 60.
-                200, // Detected bpm will be less than or equal to this. Recommended value: 200.
-                0, // If you know the bpm set it here. Use 0 otherwise.
-                0, // Provides a "hint" for the analyzer with this. Use 0 otherwise.
-                true, // True: calculate beatgridStartMs. False: save some CPU with not calculating it.
-                0, // Provides a "hint" for the analyzer with this. Use 0 otherwise.
-                false, // True: make overviewWaveform. False: save some CPU and memory with not making it.
-                false, // True: make the low/mid/high waveforms. False: save some CPU and memory with not making them.
-                true // True: calculate keyIndex. False: save some CPU with not calculating it.
-            );
+        this.tempo = this.analyzer.bpm > 0 ? this.analyzer.bpm : -1;
 
-            console.log(this.analyzer);
+        this.keyIndex = this.analyzer.keyIndex;
 
-            this.tempo = this.analyzer.bpm > 0 ? this.analyzer.bpm : -1;
+        this.setupBeatTimeouts();
 
-            this.keyIndex = this.analyzer.keyIndex;
+        this.superpowered.destroyFloatArray(float32Buffer);
+        this.superpowered.destroyFloatArray(interleavedBuffer);
+        this.analyzer.destruct();
 
-            this.setupBeatTimeouts();
-
-            this.superpowered.destroyFloatArray(float32Buffer);
-            this.superpowered.destroyFloatArray(interleavedBuffer);
-            this.analyzer.destruct();
-
-            return soundPromise.then(() => {
-                window.clearInterval(this.beatInterval);
-            });
-        }
+        return soundPromise.then(() => {
+            window.clearInterval(this.beatInterval);
+        });
     }
 
     setupBeatTimeouts () {
