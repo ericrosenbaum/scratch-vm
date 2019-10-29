@@ -102,8 +102,9 @@ class Scratch3AnalyzerBlocks {
                     blockType: BlockType.COMMAND,
                     arguments: {
                         SOUND: {
-                            type: ArgumentType.NUMBER,
-                            defaultValue: 0
+                            type: ArgumentType.STRING,
+                            menu: 'sounds',
+                            defaultValue: this.getSoundsMenu()[0]
                         }
                     }
                 },
@@ -145,8 +146,14 @@ class Scratch3AnalyzerBlocks {
                 }
             ],
             menus: {
+                sounds: 'getSoundsMenu'
             }
         };
+    }
+
+    getSoundsMenu () {
+        return ['Dance Funky', 'two', 'three'];
+        // return sprite.sounds;
     }
 
     playAndWait (args, util) {
@@ -201,20 +208,7 @@ class Scratch3AnalyzerBlocks {
                 true // True: calculate keyIndex. False: save some CPU with not calculating it.
             );
 
-            /*
-            drive around
-            superpowered bpm: 187.5
-            actual bpm: 120
-
-            techno
-            superpowered bpm: 127.659
-            actual bpm: 120
-            */
-
-
-
             console.log(this.analyzer);
-            debugger;
 
             this.tempo = this.analyzer.bpm > 0 ? this.analyzer.bpm : -1;
 
