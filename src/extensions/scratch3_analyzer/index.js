@@ -229,6 +229,7 @@ class Scratch3AnalyzerBlocks {
         this.beatInterval = window.setInterval(() => {
             this.beatFlag = true;
         }, secPerBeat * 1000);
+        this.beatFlag = true; // first beat
     }
 
     whenABeatPlayed () {
