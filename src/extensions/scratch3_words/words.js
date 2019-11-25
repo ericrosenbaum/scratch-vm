@@ -1111,15 +1111,6 @@ module.exports = {
     ],
     adjective:
     [
-        'Aristotelian',
-        'Arthurian',
-        'Bohemian',
-        'Brethren',
-        'Mosaic',
-        'Oceanic',
-        'Proctor',
-        'Terran',
-        'Tudor',
         'abroad',
         'absorbing',
         'abstract',
