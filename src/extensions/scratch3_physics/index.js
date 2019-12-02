@@ -11,18 +11,6 @@ const decomp = require('poly-decomp');
 window.decomp = decomp;
 const Matter = require('matter-js');
 
-/*
-things to work on:
-
-- offset hull using costume center?
-- pushes and spins use force scaled by body's mass
-- maybe don't need the enabled flag? just use body is not null?
-- update the convex hull when costume changes
-- collision hats
-- use the sprite center instead of the center of mass for spin and hinge
-
-*/
-
 /**
  * Icon png to be displayed at the left edge of each extension block, encoded as a data URI.
  * @type {string}
@@ -156,7 +144,6 @@ class Scratch3PhysicsBlocks {
             state.enabled = false;
             state.body = null;
         }
-        // Matter.World.clear(this.engine.world);
     }
 
     _disableTarget (target) {
@@ -170,15 +157,6 @@ class Scratch3PhysicsBlocks {
     }
 
     step () {
-        // for each target, if it has no body, create one
-        // for (let i = 1; i < this.runtime.targets.length; i++) {
-        //     const target = this.runtime.targets[i];
-        //     const state = this._getPhysicsState(target);
-        //     if (!state.body && state.enabled) {
-        //         this.enableTarget(target);
-        //     }
-        // }
-
         for (const [id, body] of this.bodies) {
             const target = this.runtime.getTargetById(id);
             if (target) {
@@ -219,8 +197,6 @@ class Scratch3PhysicsBlocks {
             // how to do scaling? target.size is a percentage of the original size... so
             // we can't keep re-applying the scale operation...
             // Matter.Body.scale(body, target.size / 100, target.size / 100);
-
-            // todo: update the convex hull if we have changed costume
         }
 
         // update the physics engine
@@ -333,15 +309,6 @@ class Scratch3PhysicsBlocks {
                     }
                 },
                 {
-                    opcode: 'whenCollides',
-                    text: formatMessage({
-                        id: 'physics.whenCollides',
-                        default: 'when this sprite collides',
-                        description: ''
-                    }),
-                    blockType: BlockType.HAT
-                },
-                {
                     opcode: 'push',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
@@ -414,7 +381,7 @@ class Scratch3PhysicsBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'physics.setGravity',
-                        default: 'set gravity to [GRAVITY]',
+                        default: 'set gravity to [GRAVITY]%',
                         description: ''
                     }),
                     arguments: {
