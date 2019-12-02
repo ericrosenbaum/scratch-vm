@@ -97,6 +97,7 @@ class Scratch3PhysicsBlocks {
         this.runtime.on('targetWasCreated', this._onTargetCreated.bind(this));
 
         this.start();
+        this.showDebugRenderer();
     }
 
     /**
@@ -419,11 +420,11 @@ class Scratch3PhysicsBlocks {
                     }
                 },
                 {
-                    opcode: 'showDebugRenderer',
+                    opcode: 'toggleOutlines',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'physics.showDebug',
-                        default: 'show debug renderer (use before enabling)',
+                        id: 'physics.toggleOutlines',
+                        default: 'toggle outlines',
                         description: ''
                     })
                 }
@@ -533,9 +534,9 @@ class Scratch3PhysicsBlocks {
                 options: {
                     width: 480,
                     height: 360,
-                    showAngleIndicator: true,
-                    showCollisions: true,
-                    showVelocity: true
+                    showAngleIndicator: false,
+                    showCollisions: false,
+                    showVelocity: false
                 }
             });
             Matter.Render.lookAt(this.render, {
@@ -548,6 +549,18 @@ class Scratch3PhysicsBlocks {
             // try to get it to sit on top of the stage and look right
             this.render.canvas.style.transform = 'scale(1,-1) translate(0px, 360px)';
             this.render.canvas.style.background = '';
+            this.render.canvas.style.pointerEvents = 'none';
+
+            this.outlinesVisible = true;
+        }
+    }
+    toggleOutlines () {
+        if (this.outlinesVisible) {
+            this.render.canvas.style.display = 'none';
+            this.outlinesVisible = false;
+        } else {
+            this.render.canvas.style.display = '';
+            this.outlinesVisible = true;
         }
     }
 }
