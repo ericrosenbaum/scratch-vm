@@ -251,6 +251,7 @@ class Scratch3PhysicsBlocks {
             let vertices = hull.map(p => ({x: p[0], y: p[1] * -1}));
             vertices = Matter.Vertices.hull(vertices);
             body = this.Bodies.fromVertices(target.x, target.y, vertices, options);
+            this._setTargetCenterToMatterCenter(target, vertices);
         } else {
             body = this.Bodies.rectangle(target.x, target.y, width, height, options);
         }
@@ -280,17 +281,21 @@ class Scratch3PhysicsBlocks {
             };
             state.body = this.Bodies.fromVertices(target.x, target.y, vertices, options);
 
-            // const xOffset = target.sprite.costumes_[target.currentCostume].rotationCenterX;
-            // const yOffset = target.sprite.costumes_[target.currentCostume].rotationCenterY;
-            // state.body.positionPrev.x -= xOffset;
-            // state.body.positionPrev.y -= yOffset;
-            // state.body.position.x -= xOffset;
-            // state.body.position.y -= yOffset;
+            this._setTargetCenterToMatterCenter(target, vertices);
 
             this.World.add(this.engine.world, state.body);
             this.bodies.set(target.id, state.body);
-
         }
+    }
+
+    _setTargetCenterToMatterCenter (target, vertices) {
+        const centerOfMass = Matter.Vertices.centre(vertices);
+        target.sprite.costumes_[target.currentCostume].rotationCenterX = centerOfMass.x;
+        target.sprite.costumes_[target.currentCostume].rotationCenterY = centerOfMass.y * -1;
+        // console.log(centerOfMass,target.sprite.costumes_[target.currentCostume].rotationCenterX,
+        //     target.sprite.costumes_[target.currentCostume].rotationCenterY);
+        // target.offsetX = centerOfMass.x - target.sprite.costumes_[target.currentCostume].rotationCenterX;
+        // target.offsetY = centerOfMass.y - (target.sprite.costumes_[target.currentCostume].rotationCenterY * -1);
     }
 
     _matterToScratchAngle (matterAngleRadians) {
