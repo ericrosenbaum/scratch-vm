@@ -471,7 +471,8 @@ class Scratch3PhysicsBlocks {
         // todo: clamp the force
         const state = this._getPhysicsState(util.target);
         if (!state.enabled || !state.body) return;
-        const force = Cast.toNumber(args.FORCE) * state.body.mass * this.forceScale * -1;
+        let force = Cast.toNumber(args.FORCE) * state.body.mass * this.forceScale * -1;
+        force *= 100;
         state.body.torque = force;
     }
 
