@@ -36,6 +36,13 @@ class Scratch3SpotifyBlocks {
             this.spotifyToken = token;
         });
 
+        this.currentTrackObject = {};
+
+        this.beatFlag = false;
+        this.currentBeatNum = 0;
+        this.beatTimeouts = [];
+        this.prevQuery = '';
+
         this._soundPlayers = new Map();
 
         this._stopAllSounds = this._stopAllSounds.bind(this);
@@ -72,13 +79,91 @@ class Scratch3SpotifyBlocks {
                             defaultValue: 'chance the rapper'
                         }
                     }
+                },
+                {
+                    opcode: 'whenABeatPlays',
+                    text: formatMessage({
+                        id: 'spotify.whenABeatPlays',
+                        default: 'when a beat plays',
+                        description: ''
+                    }),
+                    blockType: BlockType.HAT
+                },
+                {
+                    opcode: 'getTrackInfo',
+                    text: formatMessage({
+                        id: 'spotify.getTrackInfo',
+                        default: 'track info',
+                        description: ''
+                    }),
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'stopMusic',
+                    text: formatMessage({
+                        id: 'spotify.stopMusic',
+                        default: 'stop the music',
+                        description: 'stop the music.'
+                    }),
+                    blockType: BlockType.COMMAND
                 }
             ]
         };
     }
 
     playMusicAndWait (args) {
-        return this.requestSearch(Cast.toString(args.QUERY));
+        const query = Cast.toString(args.QUERY);
+        if (query === this.prevQuery && this.currentTrackObject.url) {
+            return this.playTrack(this.currentTrackObject.url);
+        }
+        return this.refreshAccessTokenIfNeeded().then(() =>
+            this.requestSearch(query).then(trackObjects =>
+                this.keepTryingToGetTimingData(trackObjects).then(trackObject => {
+                    this.currentTrackObject = trackObject;
+                    this.prevQuery = query;
+                    return this.playTrack(this.currentTrackObject.url);
+                })
+            )
+        );
+    }
+
+    setupTimeouts () {
+        // events on each beat
+        this.clearTimeouts();
+        this.beatTimeouts = [];
+        for (let i = 0; i < this.currentTrackObject.numBeats; i++) {
+            const t = window.setTimeout(num => {
+                this.beatFlag = true;
+                this.currentBeatNum = num;
+            }, (this.currentTrackObject.beats[i] - 0.1) * 1000, i);
+            this.beatTimeouts.push(t);
+        }
+    }
+
+    clearTimeouts () {
+        this.beatTimeouts.forEach(timeout => clearTimeout(timeout));
+    }
+
+    whenABeatPlays () {
+        if (this.beatFlag) {
+            window.setTimeout(() => {
+                this.beatFlag = false;
+            }, 60);
+            return true;
+        }
+        return false;
+    }
+
+    getTrackInfo () {
+        if (this.currentTrackObject.url) {
+            const t = this.currentTrackObject;
+            return `${t.name} by ${t.artist} from ${t.album}`;
+        }
+        return '';
+    }
+
+    stopMusic () {
+        this._stopAllSounds();
     }
 
     currentTimeSec () {
@@ -103,6 +188,20 @@ class Scratch3SpotifyBlocks {
                 log.warn('got token', token.value);
                 resolve(token);
             });
+        });
+    }
+
+    refreshAccessTokenIfNeeded () {
+        return new Promise(resolve => {
+            if (!this.spotifyToken || this.currentTimeSec() > this.spotifyToken.expirationTime) {
+                this.getAccessToken().then(newToken => {
+                    this.spotifyToken = newToken;
+                    log.warn('token expired, got a new one');
+                    resolve();
+                });
+            } else {
+                resolve();
+            }
         });
     }
 
@@ -132,12 +231,54 @@ class Scratch3SpotifyBlocks {
                     return reject();
                 }
 
-                const trackObjects = body.tracks.items;
-                console.log(trackObjects);
+                let trackObjects = body.tracks.items;
 
-                const songUrl = trackObjects[0].preview_url;
-                resolve(this.playTrack(songUrl));
+                if (!trackObjects || trackObjects.length === 0) {
+                    log.warn('no tracks');
+                    return reject();
+                }
+
+                trackObjects = trackObjects.filter(t => !t.explicit);
+                if (trackObjects.length === 0) {
+                    log.warn('no tracks without explicit lyrics');
+                    return reject();
+                }
+
+                trackObjects = trackObjects.filter(t => t.preview_url);
+                if (trackObjects.length === 0) {
+                    log.warn('no tracks with preview mp3');
+                    return reject();
+                }
+
+                resolve(trackObjects);
             });
+        });
+    }
+
+    keepTryingToGetTimingData (trackObjects) {
+        return new Promise((resolve, reject) => {
+            this.getTrackTimingData(trackObjects[0].preview_url).then(
+                trackTimingData => {
+                    const track = trackObjects[0];
+                    const trackObject = {
+                        url: track.preview_url,
+                        name: track.name ? track.name : '',
+                        artist: track.artists ? track.artists[0].name : '',
+                        album: track.album ? track.album.name : '',
+                        ...trackTimingData
+                    };
+                    resolve(trackObject);
+                },
+                () => {
+                    log.warn(`no timing data for ${trackObjects[0].name}, trying next track`);
+                    if (trackObjects.length > 1) {
+                        trackObjects = trackObjects.slice(1);
+                        this.keepTryingToGetTimingData(trackObjects, resolve, reject);
+                    } else {
+                        log.warn('no more results');
+                        reject();
+                    }
+                });
         });
     }
 
@@ -157,7 +298,6 @@ class Scratch3SpotifyBlocks {
                     return resolve();
                 }
 
-                // Play the sound
                 const sound = {
                     data: {
                         buffer: body.buffer
@@ -178,15 +318,112 @@ class Scratch3SpotifyBlocks {
                         this._soundPlayers.delete(soundPlayer.id);
                         resolve();
                     });
+
+                    window.clearTimeout(this.trackTimeout);
+                    this.trackTimeout = window.setTimeout(() => {
+                        soundPlayer.stop();
+                    }, this.currentTrackObject.loop_duration * 1000);
+
+                    this.setupTimeouts();
                 });
             });
         });
     }
 
     _stopAllSounds () {
+        this.clearTimeouts();
         this._soundPlayers.forEach(player => {
             player.stop();
         });
     }
+
+    // code below adapted from spotify
+    getTrackTimingData (url) {
+        return new Promise((resolve, reject) => {
+            if (!url) {
+                reject();
+                return;
+            }
+            this.makeRequest(url, resolve, reject);
+        });
+    }
+
+    findString (buffer, string) {
+        for (let i = 0; i < buffer.length - string.length; i++) {
+            let match = true;
+            for (let j = 0; j < string.length; j++) {
+                const c = String.fromCharCode(buffer[i + j]);
+                if (c !== string[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    getSection (buffer, start, which) {
+        let sectionCount = 0;
+        let i;
+        for (i = start; i < buffer.length; i++) {
+            if (buffer[i] === 0) {
+                sectionCount++;
+            }
+            if (sectionCount >= which) {
+                break;
+            }
+        }
+        i++;
+        let content = '';
+        while (i < buffer.length) {
+            if (buffer[i] === 0) {
+                break;
+            }
+            const c = String.fromCharCode(buffer[i]);
+            content += c;
+            i++;
+        }
+        let js = '';
+        try {
+            js = JSON.parse(content);
+        } catch (e) {
+            js = '';
+        }
+        return js;
+    }
+
+    makeRequest (url, resolve, reject) {
+        if (!url) {
+            reject();
+            return;
+        }
+        nets({
+            url: url,
+            responseType: 'arraybuffer'
+        }, (err, res, body) => {
+            const buffer = new Uint8Array(body.buffer); // this.response == uInt8Array.buffer
+            const idx = this.findString(buffer, 'GEOB');
+            const trackTimingData = this.getSection(buffer, idx + 1, 8);
+
+            if (!trackTimingData) {
+                reject();
+                return;
+            }
+
+            for (let i = 0; i < trackTimingData.beats.length; i++) {
+                if (trackTimingData.loop_duration < trackTimingData.beats[i]) {
+                    trackTimingData.numBeats = i;
+                    break;
+                }
+            }
+
+            resolve(trackTimingData);
+        });
+    }
+
+
 }
 module.exports = Scratch3SpotifyBlocks;
