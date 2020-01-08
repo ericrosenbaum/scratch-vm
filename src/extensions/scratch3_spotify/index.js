@@ -256,30 +256,33 @@ class Scratch3SpotifyBlocks {
     }
 
     keepTryingToGetTimingData (trackObjects) {
-        return new Promise((resolve, reject) => {
-            this.getTrackTimingData(trackObjects[0].preview_url).then(
-                trackTimingData => {
-                    const track = trackObjects[0];
-                    const trackObject = {
-                        url: track.preview_url,
-                        name: track.name ? track.name : '',
-                        artist: track.artists ? track.artists[0].name : '',
-                        album: track.album ? track.album.name : '',
-                        ...trackTimingData
-                    };
-                    resolve(trackObject);
-                },
-                () => {
-                    log.warn(`no timing data for ${trackObjects[0].name}, trying next track`);
-                    if (trackObjects.length > 1) {
-                        trackObjects = trackObjects.slice(1);
-                        this.keepTryingToGetTimingData(trackObjects, resolve, reject);
-                    } else {
-                        log.warn('no more results');
-                        reject();
-                    }
-                });
-        });
+        return new Promise((resolve, reject) =>
+            this.tryToGetTimingData(trackObjects, resolve, reject)
+        );
+    }
+
+    tryToGetTimingData (trackObjects, resolve, reject) {
+        this.getTrackTimingData(trackObjects[0].preview_url).then(
+            trackTimingData => {
+                const track = trackObjects[0];
+                const trackObject = {
+                    url: track.preview_url,
+                    name: track.name ? track.name : '',
+                    artist: track.artists ? track.artists[0].name : '',
+                    album: track.album ? track.album.name : '',
+                    ...trackTimingData
+                };
+                resolve(trackObject);
+            },
+            () => {
+                log.warn(`no timing data for ${trackObjects[0].name}, trying next track`);
+                if (trackObjects.length > 1) {
+                    trackObjects = trackObjects.slice(1);
+                    return this.tryToGetTimingData(trackObjects, resolve, reject);
+                }
+                log.warn('no more results');
+                reject();
+            });
     }
 
     playTrack (url) {
