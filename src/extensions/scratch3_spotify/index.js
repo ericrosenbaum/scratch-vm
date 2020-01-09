@@ -114,14 +114,14 @@ class Scratch3SpotifyBlocks {
     playMusicAndWait (args) {
         const query = Cast.toString(args.QUERY);
         if (query === this.prevQuery && this.currentTrackObject.url) {
-            return this.playTrack(this.currentTrackObject.url);
+            return this.playTrack(this.currentTrackObject);
         }
         return this.refreshAccessTokenIfNeeded().then(() =>
             this.requestSearch(query).then(trackObjects =>
                 this.keepTryingToGetTimingData(trackObjects).then(trackObject => {
                     this.currentTrackObject = trackObject;
                     this.prevQuery = query;
-                    return this.playTrack(this.currentTrackObject.url);
+                    return this.playTrack(this.currentTrackObject);
                 })
             )
         );
@@ -285,10 +285,41 @@ class Scratch3SpotifyBlocks {
             });
     }
 
-    playTrack (url) {
+    playTrack (trackObject) {
+        if (trackObject.soundPlayer) {
+            return this.start(trackObject.soundPlayer);
+        }
+        return this.downloadTrack(trackObject).then(() =>
+            this.start(trackObject.soundPlayer)
+        );
+    }
+
+    start (soundPlayer) {
+        return new Promise(resolve => {
+            const engine = this.runtime.audioEngine;
+            const chain = engine.createEffectChain();
+            chain.set('volume', 100);
+            soundPlayer.connect(chain);
+
+            soundPlayer.play();
+            soundPlayer.on('stop', () => {
+                // this._soundPlayers.delete(soundPlayer.id);
+                resolve();
+            });
+
+            window.clearTimeout(this.trackTimeout);
+            this.trackTimeout = window.setTimeout(() => {
+                soundPlayer.stop();
+            }, this.currentTrackObject.loop_duration * 1000);
+
+            this.setupTimeouts();
+        });
+    }
+
+    downloadTrack (trackObject) {
         return new Promise(resolve => {
             nets({
-                url: url,
+                url: trackObject.url,
                 timeout: 10000
             }, (err, res, body) => {
                 if (err) {
@@ -311,23 +342,8 @@ class Scratch3SpotifyBlocks {
                     this._stopAllSounds();
                     this._soundPlayers.set(soundPlayer.id, soundPlayer);
 
-                    const engine = this.runtime.audioEngine;
-                    const chain = engine.createEffectChain();
-                    chain.set('volume', 100);
-                    soundPlayer.connect(chain);
-
-                    soundPlayer.play();
-                    soundPlayer.on('stop', () => {
-                        this._soundPlayers.delete(soundPlayer.id);
-                        resolve();
-                    });
-
-                    window.clearTimeout(this.trackTimeout);
-                    this.trackTimeout = window.setTimeout(() => {
-                        soundPlayer.stop();
-                    }, this.currentTrackObject.loop_duration * 1000);
-
-                    this.setupTimeouts();
+                    trackObject.soundPlayer = soundPlayer;
+                    resolve();
                 });
             });
         });
