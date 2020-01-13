@@ -11,14 +11,14 @@ const Cast = require('../../util/cast');
  * @type {string}
  */
 // eslint-disable-next-line max-len
-const menuIconURI = '';
+const menuIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAQAAAAkGDomAAAFLUlEQVRo3u2afUxXVRjHP74kmsZwaSkVaWqilnElBmgSQlm+DTRyQZRmkqNl5pjoNCI3pFyUmpGYszTTVbOpmLMJmv6WGiJDcSBQkihvloorX5ov0R86jc6957787r2/tjjnz99zzv387j3neb7nOQ8t/Lc7bYD/G0DLrTujeJmFrGUHFTTSRDW7WE82MxjNXVantQNwBNkc4A/pC/iTUpYRSyd3AUN5n59NfakG8ohyBzCOAssL6kemOAsYQ6HXq76YSc4A9uBz27bmNgbYDZjMWVu9xzVm2Qn4iSMubgud7QDszV7HvPBPPOwtYH9+dTRQXNNyPsYAFR03bE8fZxWwL5dcCrgjrQAGcNpFTRBsHrDEVdHSSAdzgKtc11U7zQDG+0T6zTEK6Ofa5vh3v98Y4AafyediI4AhPlX4E/UB90kn+IvjFLCWHOYyhbFEE0EoCgphDCeGiaSQwVI2sIc6C4An9QBHagysYh1pRBFkQhR3IIjHeI2V7DeBOE0OKL6/SywkEm9bHxL5iKMGAOtkgP0E84sMxM42jAxdzFhtwGzB+B2caE+yhsuagBu1AU8Ixk/jVLuHbC6oAl6hizrgQyrGMmHeld48wGBCUFAYSjB96ClTySpieLEqYpw6YKaKaS3t/zFhOwbzLHNYQSFVNHNF5aD+G2Vs40PSSOARbtOFHES1MMuX6oBFqv/mEPEE8ShpbKXWgkrxsJjJBEoQewmhtV4NsJPGirjunr2NEJfZS7qmR9gh2A8QASNdCWW7ScFfANwq2CWKgFNdi7dneIuerSJOs2AzTwScb+qDVVPAV6xkCYvIIotFfMAKNrCdw4YOWr+zED8AuqmmU1aLgB/rTnqBIpYznWh6SfdlAGEkksk2jkvnO0EeK2lU/W2XCLhZOtkqJtLDgjtWeJUtnDG9DMpFwD0S82Qvo4Y/U8k3J7tEwHJN41KbgltfMqgxCHhaBKzQNC7QeXBHOprQiLM4Zg3Qo2l8vtXqa88QnmcRq8nHQzk11FNPDeV4yOdT3mUaYdwugWzHbN2dXicCbpGYV/IEdxLBXLZz0tgnooilJHKvZnjbKR1fIQLm6TzyoiWnfJUfSGeQKqTszLJbBFzgaPTYdOu8drN9LbH/TAR8yfEQd5TUVoClEtv5IuAIV+JwGfE38NKldkkiYGfDq6yBA3zDe8wkgRgiGIaCQjijSOANlvIdlSpS9lb3kCsNCy20EKwmWA9Kh5zlWxbwDAMNqGQIZAJv45GCavcmdUWdJRlSQneLR6PpfG8acKM6oCIZEuFVkAsl15SbStA6djZoDolUEVX9CCWacTzHCyQynmgUgm6oPDXXnGM4899VCzBHsvsCAX/CeIVl5FOmGaxO4WEVqSgqkA/yhaELHs2De7A0kpRwztRKOkYOjwuQK3THjZElj4pt93yHmc0drQ7rujtYBhjriHs+xbybazNOxzZVL4F50KEYUksKA5igI/+b9DOs4T5NAScZSaJv9hneEWNZ/m5c9RHgQKMXOUk+wcs0cxW23nW8fWYvEytcxWumi1nAuznvIqBi5UJ7iA15QWP9KaslAcMtCk5zfbI3RRVDHa9aGONtWUpfDjkGV0e4PYU9zlzQFhJgX2nUDNsvud+0u7gsiE22wXkIcaY8b4Kpi1WNtBAvOlvgmKxz5S3PK8x0p0Q0ijyN5LdWP8c6xrpbZOvHaHI5wjUdtCrWEC/br85VAV9v9zGe11nCJvZTSQ2/UEUR+SwnjUn0t61Mua0SvQ3QR/1vOfeIp4gOKeQAAAAASUVORK5CYII=';
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
  * @type {string}
  */
 // eslint-disable-next-line max-len
-const blockIconURI = '';
+const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAQAAAAkGDomAAAEm0lEQVRo3u2afUxVZRzHGaJcphgOEFGL2XzBfMMKTIIQV2ilMyycXh1qUXc2vU7MEm/BSDcNRwS9mMzIhK2WmpuOiDGbzpot0VoWVpq2zHIoJsJMCf30n8N73p5zznMOtd3v+fM8v/N8ztvv+b08YYT9t4+wEGAIMAQYAvw/AN5JFl7WsJl32Uo5RSxkOnf3PuBdeNnCD3ShppucpIaljOwNQA9e6rmJmA5QwCD3AAdQxB+Y1WU2MsQNwFWcx6o6KSHCScBMjmJXp5jjFODLyFKlfMB+NCBTX5MgEzCRn5Gti0yUBTiSizihbh6UATiYv3BO4+wChnMGJ9VJrD3AJpxWix3Al3BD1VYBJ+CWHrUG+JNrgJfoZx7Qh5t6zSxgXx3ncoVmaimjkMXM4REySCOVKWSSQy5LeIEydnCYS6YQ48wBrla5xLeUs5AUBgouj1GMYTbr2EWrAOBWM4DhiruvYayNuNhDOsUcMUCMEQecHWTaKCkFSmYt32sCLhcH/DTINENqpjadvaqAP4oCDlKYTjNYDiPxEEm4CchJ7FZBTBYDnKuS9PQ8P5xsnqaUauo5xi+co5ULtPI7p2imnmrW42MGo+mrC/kYF4xfspphpcq9fUgayXh5hxbhXA7Os5cAOZoZ3eSg8fvEAI9Ld8MdfMxi1b/0xG3j2vEYA8bT7dBqcZltPBQ0269BYyYZA051eFH7jJm35pqnODvXGPApwynaaORNCplHNimMYhhDGUoSyUxhJksopoYv+VvnCp8wiwyKVc74jQGX61y4kRU8QJSQI4klmzXs55qp57vBGLBUw7SdVEtueTB57NQoLylVZQz4uoZpwNbqkYhfKL6sNgas0DDNV524D9HEkUgCMUoXoTjy+c4+4Ksapkd7fF1ZLKOKzznBn3TSxQ26uUobpznCLkpYwL2aX+pzusGXwCteoWn8DT4KOcRVwcpBA36lXyOMgbTY+UnyJPu9w7yoKAbnao5eaQyY7oh73s7UHnNM0xz3pDFgAjccWkM+ulXo0C4HTBYJFlqEEsVm6tjMWpaRz3zm4+VZVrOJD2jmiqbd2wT4SieoiBIBfEsHbA8BnmAs/XXdyR2k4qOONpPPuEEs3MrTTDfTTLrn/sxiO/8IA64UA4zTMN9tcRUZRolghXGcaNLUZJjUJJHFIop5jz00cpBD7GcftaxnEenEK64YTSnXDcvrwlldrmZleSmv0MRvBlNd4xgVZNMnqGGm3yNYJQ4YofMfmtFZym9L+Cfqjo41U/pYJ9H/7SBFYBF431xtxkOHVCf9BuPJ5KTOiCFmy29+V8tvlVYKmGdcw+vQTiP0AO9zDTDXahG91BW8OjttiC8cxzttr08SaaF1bUZdJNpthQ0XDPGt6X4ZzcTxktYVpR6W1Y4dwVkHXItQ8CYaMkVzUCrecZLkbwnYKA1vm1ObKnKE8hV9nWOBs9tSArTb6LGXMcD5jT3xbLDQhb9OFSPc2xoVwzMcEIZrxm/kkJ3ZXDaaAmoVdeae39tOnmdCb2/Pi2AMMyigiE1UUEEZAXw8zj0CBbnQBscQYAgwBBgCNDj+BXbK1QJSHb3LAAAAAElFTkSuQmCC';
 
 /**
  * Class for the spotify blocks.
@@ -76,7 +76,7 @@ class Scratch3SpotifyBlocks {
                     arguments: {
                         QUERY: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'chance the rapper'
+                            defaultValue: 'tacos'
                         }
                     }
                 },
