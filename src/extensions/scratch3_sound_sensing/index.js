@@ -8,18 +8,11 @@ const Cast = require('../../util/cast');
 const Loudness = require('./Loudness');
 
 /**
- * Icon svg to be displayed in the blocks category menu, encoded as a data URI.
- * @type {string}
- */
-// eslint-disable-next-line max-len
-const menuIconURI = '';
-
-/**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
  * @type {string}
  */
-// eslint-disable-next-line max-len
-const blockIconURI = '';
+const blockIconURI = 'https://www.gstatic.com/images/icons/material/system/1x/mic_white_24dp.png';
+const menuIconURI = 'https://www.gstatic.com/images/icons/material/system/1x/mic_grey600_24dp.png';
 
 /**
  * Input sources for audio.
