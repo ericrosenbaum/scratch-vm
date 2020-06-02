@@ -35,6 +35,9 @@ class Loudness {
          * @type {MediaStreamSourceNode}
          */
         this.mic = null;
+
+        this.spriteAnalyzers = {};
+        this.spriteDataArrays = {};
     }
 
     /**
@@ -73,6 +76,22 @@ class Loudness {
 
         // if there is no microphone input, return -1
         return -1;
+    }
+
+    getSpriteLoudness (spriteId) {
+        if (!this.spriteAnalyzers[spriteId]) {
+            this.spriteAnalyzers[spriteId] = this.audioContext.createAnalyser();
+            this.spriteDataArrays[spriteId] = new Float32Array(this.this.spriteAnalyzers[spriteId].fftSize);
+        }
+        //
+        this.projectAnalyser.getFloatTimeDomainData(this.projectDataArray);
+        let loudness = this.getLoudnessOfArray(this.projectDataArray);
+        // smooth the value, if it is descending
+        if (this._lastProjectLoudness) {
+            loudness = Math.max(loudness, this._lastProjectLoudness * SMOOTHING);
+        }
+        this._lastProjectLoudness = loudness;
+        return Math.round(loudness);
     }
 
     /*

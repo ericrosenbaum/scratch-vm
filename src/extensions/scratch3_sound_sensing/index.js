@@ -145,7 +145,15 @@ class Scratch3SoundSensingBlocks {
         return this.getLoudness(INPUT.microphone);
     }
 
-    getProjectLoudness () {
+    getProjectLoudness (args, util) {
+        const thisSpriteId = util.target.sprite.clones[0].id;
+        const playerTargets = util.target.sprite.soundBank.playerTargets;
+        for (const [playerId, playerTarget] of playerTargets) {
+            if (playerTarget.id === thisSpriteId) {
+                console.log('this sprite has a sound player', playerId);
+            }
+        }
+        debugger;
         return this.getLoudness(INPUT.project);
     }
 
