@@ -157,7 +157,8 @@ class Video {
         // if we haven't already created and started a preview frame render loop, do so
         if (!this._renderPreviewFrame) {
             renderer.updateDrawableProperties(this._drawable, {
-                ghost: this._forceTransparentPreview ? 100 : this._ghost,
+                // ghost: this._forceTransparentPreview ? 100 : this._ghost,
+                color: 100,
                 visible: true
             });
 
