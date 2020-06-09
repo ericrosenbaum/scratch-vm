@@ -146,23 +146,19 @@ class Scratch3SoundSensingBlocks {
     }
 
     getProjectLoudness (args, util) {
-        const thisSpriteId = util.target.sprite.clones[0].id;
-        const playerTargets = util.target.sprite.soundBank.playerTargets;
-        for (const [playerId, playerTarget] of playerTargets) {
-            if (playerTarget.id === thisSpriteId) {
-                console.log('this sprite has a sound player', playerId);
-            }
-        }
-        debugger;
-        return this.getLoudness(INPUT.project);
+        return this.getLoudness(INPUT.project, util.target);
     }
 
-    getLoudness (input) {
+    getLoudness (input, target) {
         if (typeof this.runtime.audioEngine === 'undefined') return -1;
         if (this.runtime.currentStepTime === null) return -1;
         if (!this.loudness) {
             const engine = this.runtime.audioEngine;
-            this.loudness = new Loudness(engine.audioContext, engine.inputNode);
+            let inputNode = engine.inputNode;
+            if (target) {
+                inputNode = engine.createTargetOutputNode(target);
+            }
+            this.loudness = new Loudness(engine.audioContext, inputNode);
         }
 
         let timeSinceLoudness = 0;
