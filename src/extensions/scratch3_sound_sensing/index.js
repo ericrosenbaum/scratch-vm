@@ -6,6 +6,7 @@ const Timer = require('../../util/timer');
 const Cast = require('../../util/cast');
 
 const Loudness = require('./Loudness');
+const SpriteLoudness = require('./SpriteLoudness');
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
@@ -21,7 +22,8 @@ const menuIconURI = 'https://www.gstatic.com/images/icons/material/system/1x/mic
  */
 const INPUT = {
     microphone: 'microphone',
-    project: 'project'
+    project: 'project',
+    sprite: 'sprite'
 };
 
 /**
@@ -55,6 +57,8 @@ class Scratch3SoundSensingBlocks {
          */
         this._cachedMicrophoneLoudnessTimestamp = 0;
         this._cachedProjectLoudnessTimestamp = 0;
+
+        this.loudnessAnalyzers = new Map();
     }
 
     /**
@@ -108,6 +112,15 @@ class Scratch3SoundSensingBlocks {
                         default: 'project loudness',
                         description: 'get the loudness of the sound produced by the project'
                     })
+                },
+                {
+                    opcode: 'getSpriteLoudness',
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: 'soundSensing.getSpriteLoudness',
+                        default: 'sprite loudness',
+                        description: 'get the loudness of the sound produced by this sprite'
+                    })
                 }
             ],
             menus: {
@@ -129,6 +142,14 @@ class Scratch3SoundSensingBlocks {
                                 description: 'The project.'
                             }),
                             value: INPUT.project
+                        },
+                        {
+                            text: formatMessage({
+                                id: 'soundSensing.sprite',
+                                default: 'sprite',
+                                description: 'The sprite.'
+                            }),
+                            value: INPUT.sprite
                         }
                     ]
                 }
@@ -145,20 +166,25 @@ class Scratch3SoundSensingBlocks {
         return this.getLoudness(INPUT.microphone);
     }
 
-    getProjectLoudness (args, util) {
-        return this.getLoudness(INPUT.project, util.target);
+    getProjectLoudness () {
+        return this.getLoudness(INPUT.project);
     }
 
-    getLoudness (input, target) {
+    getSpriteLoudness (args, util) {
+        let analyzer = this.loudnessAnalyzers.get(util.target);
+        if (!analyzer) {
+            analyzer = new SpriteLoudness(this.runtime.audioEngine, util.target);
+            this.loudnessAnalyzers.set(util.target, analyzer);
+        }
+        return analyzer.getLoudness();
+    }
+
+    getLoudness (input) {
         if (typeof this.runtime.audioEngine === 'undefined') return -1;
         if (this.runtime.currentStepTime === null) return -1;
         if (!this.loudness) {
             const engine = this.runtime.audioEngine;
-            let inputNode = engine.inputNode;
-            if (target) {
-                inputNode = engine.createTargetOutputNode(target);
-            }
-            this.loudness = new Loudness(engine.audioContext, inputNode);
+            this.loudness = new Loudness(engine.audioContext, engine.inputNode);
         }
 
         let timeSinceLoudness = 0;
