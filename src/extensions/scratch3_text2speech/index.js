@@ -721,6 +721,8 @@ class Scratch3Text2SpeechBlocks {
         path += `&gender=${gender}`;
         path += `&text=${encodeURIComponent(words.substring(0, 128))}`;
 
+        const target = util.target;
+
         // Perform HTTP request to get audio file
         return new Promise(resolve => {
             nets({
@@ -753,6 +755,8 @@ class Scratch3Text2SpeechBlocks {
                     const chain = engine.createEffectChain();
                     chain.set('volume', SPEECH_VOLUME);
                     soundPlayer.connect(chain);
+
+                    soundPlayer.setVMTarget(target);
 
                     soundPlayer.play();
                     soundPlayer.on('stop', () => {

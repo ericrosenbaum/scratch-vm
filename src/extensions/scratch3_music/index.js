@@ -1006,6 +1006,8 @@ class Scratch3MusicBlocks {
         volumeGain.gain.setValueAtTime(util.target.volume / 100, engine.currentTime);
         volumeGain.connect(engine.getInputNode());
 
+        player.setVMTarget(util.target);
+
         this._concurrencyCounter++;
         player.once('stop', () => {
             this._concurrencyCounter--;
@@ -1129,6 +1131,8 @@ class Scratch3MusicBlocks {
         const releaseGain = context.createGain();
         volumeGain.connect(releaseGain);
         releaseGain.connect(engine.getInputNode());
+
+        player.setVMTarget(util.target);
 
         // Schedule the release of the note, ramping its gain down to zero,
         // and then stopping the sound.
