@@ -158,7 +158,7 @@ class Video {
         if (!this._renderPreviewFrame) {
             renderer.updateDrawableProperties(this._drawable, {
                 // ghost: this._forceTransparentPreview ? 100 : this._ghost,
-                color: 100,
+                colorSegmentation: 100,
                 visible: true
             });
 
