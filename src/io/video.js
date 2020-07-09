@@ -157,8 +157,7 @@ class Video {
         // if we haven't already created and started a preview frame render loop, do so
         if (!this._renderPreviewFrame) {
             renderer.updateDrawableProperties(this._drawable, {
-                // ghost: this._forceTransparentPreview ? 100 : this._ghost,
-                colorSegmentation: 100,
+                ghost: this._forceTransparentPreview ? 100 : this._ghost,
                 visible: true
             });
 
@@ -186,6 +185,12 @@ class Video {
 
             this._renderPreviewFrame();
         }
+    }
+
+    updateVideoEffect (effectName, value) {
+        this.runtime.renderer.updateDrawableProperties(this._drawable, {
+            [effectName]: value
+        });
     }
 
     get videoReady () {
