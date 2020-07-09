@@ -1,5 +1,3 @@
-const Runtime = require('../../engine/runtime');
-
 const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
@@ -97,10 +95,53 @@ class Scratch3ColorSensingBlocks {
             blockIconURI: blockIconURI,
             menuIconURI: menuIconURI,
             blocks: [
+                {
+                    opcode: 'setColor',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'colorSensing.setColor',
+                        default: 'set color to [COLOR]',
+                        description: ''
+                    }),
+                    arguments: {
+                        COLOR: {
+                            type: ArgumentType.COLOR
+                        }
+                    }
+                },
+                {
+                    opcode: 'touchingColor',
+                    blockType: BlockType.BOOLEAN,
+                    text: formatMessage({
+                        id: 'colorSensing.touchingColor',
+                        default: 'touching [COLOR]?',
+                        description: ''
+                    }),
+                    arguments: {
+                        COLOR: {
+                            type: ArgumentType.COLOR
+                        }
+                    }
+                }
             ],
             menus: {
             }
         };
+    }
+
+    hexToDec (hex) {
+        return parseInt(hex.replace('#', '0x'), 16);
+    }
+
+    setColor (args) {
+        // const colorDec = this.hexToDec(args.COLOR);
+        const color = Cast.toRgbColorList(args.COLOR);
+        this.runtime.ioDevices.video.updateVideoEffect('colorSegmentation', color);
+    }
+
+    touchingColor (args, util) {
+        const color = Cast.toRgbColorList(args.COLOR);
+        return util.target.isTouchingColor(color);
     }
 
 }
