@@ -35,6 +35,14 @@ class Scratch3ColorSensingBlocks {
         this.runtime.ioDevices.video.mirror = true;
 
         this._loop();
+
+        this.colors = {
+            A: [0, 0, 0],
+            B: [0, 0, 0],
+            C: [0, 0, 0]
+        };
+
+        this.grayMode = false;
     }
 
     /**
@@ -96,11 +104,54 @@ class Scratch3ColorSensingBlocks {
             menuIconURI: menuIconURI,
             blocks: [
                 {
-                    opcode: 'setColor',
+                    opcode: 'setColorA',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'colorSensing.setColor',
-                        default: 'set color to [COLOR]',
+                        id: 'colorSensing.setColorA',
+                        default: 'set color A to [COLOR]',
+                        description: ''
+                    }),
+                    arguments: {
+                        COLOR: {
+                            type: ArgumentType.COLOR
+                        }
+                    }
+                },
+                {
+                    opcode: 'setColorB',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'colorSensing.setColorB',
+                        default: 'set color B to [COLOR]',
+                        description: ''
+                    }),
+                    arguments: {
+                        COLOR: {
+                            type: ArgumentType.COLOR
+                        }
+                    }
+                },
+                {
+                    opcode: 'setColorC',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'colorSensing.setColorC',
+                        default: 'set color C to [COLOR]',
+                        description: ''
+                    }),
+                    arguments: {
+                        COLOR: {
+                            type: ArgumentType.COLOR
+                        }
+                    }
+                },
+                '---',
+                {
+                    opcode: 'whenTouchingColor',
+                    blockType: BlockType.HAT,
+                    text: formatMessage({
+                        id: 'colorSensing.whenTouchingColor',
+                        default: 'when [COLOR] touched',
                         description: ''
                     }),
                     arguments: {
@@ -122,6 +173,25 @@ class Scratch3ColorSensingBlocks {
                             type: ArgumentType.COLOR
                         }
                     }
+                },
+                '---',
+                {
+                    opcode: 'grayModeOn',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'colorSensing.grayModeOn',
+                        default: 'gray mode on',
+                        description: ''
+                    })
+                },
+                {
+                    opcode: 'grayModeOff',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'colorSensing.grayModeOff',
+                        default: 'gray mode off',
+                        description: ''
+                    })
                 }
             ],
             menus: {
@@ -129,14 +199,30 @@ class Scratch3ColorSensingBlocks {
         };
     }
 
-    hexToDec (hex) {
-        return parseInt(hex.replace('#', '0x'), 16);
+    setColorA (args) {
+        this.setColorId('A', args.COLOR);
     }
 
-    setColor (args) {
-        // const colorDec = this.hexToDec(args.COLOR);
-        const color = Cast.toRgbColorList(args.COLOR);
-        this.runtime.ioDevices.video.updateVideoEffect('colorSegmentation', color);
+    setColorB (args) {
+        this.setColorId('B', args.COLOR);
+    }
+
+    setColorC (args) {
+        this.setColorId('C', args.COLOR);
+    }
+
+    setColorId (colorId, colorArg) {
+        let colorList = Cast.toRgbColorList(colorArg);
+        colorList = colorList.map(c => c / 255);
+
+        this.colors[colorId] = colorList;
+
+        this.updateColors();
+    }
+
+    updateColors () {
+        const flatColors = [...this.colors.A, ...this.colors.B, ...this.colors.C, this.grayMode ? 1 : 0];
+        this.runtime.ioDevices.video.updateVideoEffect('colorSegmentation', flatColors);
     }
 
     touchingColor (args, util) {
@@ -144,6 +230,20 @@ class Scratch3ColorSensingBlocks {
         return util.target.isTouchingColor(color);
     }
 
+    whenTouchingColor (args, util) {
+        const color = Cast.toRgbColorList(args.COLOR);
+        return util.target.isTouchingColor(color);
+    }
+
+    grayModeOn () {
+        this.grayMode = true;
+        this.updateColors();
+    }
+
+    grayModeOff () {
+        this.grayMode = false;
+        this.updateColors();
+    }
 }
 
 module.exports = Scratch3ColorSensingBlocks;
