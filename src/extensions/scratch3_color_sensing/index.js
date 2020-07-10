@@ -147,30 +147,34 @@ class Scratch3ColorSensingBlocks {
                 },
                 '---',
                 {
-                    opcode: 'whenTouchingColor',
+                    opcode: 'whenTouchingColorMenu',
                     blockType: BlockType.HAT,
                     text: formatMessage({
-                        id: 'colorSensing.whenTouchingColor',
-                        default: 'when [COLOR] touched',
+                        id: 'colorSensing.whenTouchingColorMenu',
+                        default: 'when color [COLOR_ID] touched',
                         description: ''
                     }),
                     arguments: {
-                        COLOR: {
-                            type: ArgumentType.COLOR
+                        COLOR_ID: {
+                            type: ArgumentType.STRING,
+                            menu: 'COLOR_ID',
+                            defaultValue: 'A'
                         }
                     }
                 },
                 {
-                    opcode: 'touchingColor',
+                    opcode: 'touchingColorMenu',
                     blockType: BlockType.BOOLEAN,
                     text: formatMessage({
                         id: 'colorSensing.touchingColor',
-                        default: 'touching [COLOR]?',
+                        default: 'touching color [COLOR_ID]?',
                         description: ''
                     }),
                     arguments: {
-                        COLOR: {
-                            type: ArgumentType.COLOR
+                        COLOR_ID: {
+                            type: ArgumentType.STRING,
+                            menu: 'COLOR_ID',
+                            defaultValue: 'A'
                         }
                     }
                 },
@@ -195,6 +199,7 @@ class Scratch3ColorSensingBlocks {
                 }
             ],
             menus: {
+                COLOR_ID: ['A', 'B', 'C']
             }
         };
     }
@@ -212,21 +217,30 @@ class Scratch3ColorSensingBlocks {
     }
 
     setColorId (colorId, colorArg) {
-        let colorList = Cast.toRgbColorList(colorArg);
-        colorList = colorList.map(c => c / 255);
-
+        const colorList = Cast.toRgbColorList(colorArg);
         this.colors[colorId] = colorList;
-
         this.updateColors();
     }
 
     updateColors () {
-        const flatColors = [...this.colors.A, ...this.colors.B, ...this.colors.C, this.grayMode ? 1 : 0];
-        this.runtime.ioDevices.video.updateVideoEffect('colorSegmentation', flatColors);
+        const flatColors = [...this.colors.A, ...this.colors.B, ...this.colors.C];
+        const normalized = flatColors.map(c => c / 255);
+        const colorData = [...normalized, this.grayMode ? 1 : 0];
+        this.runtime.ioDevices.video.updateVideoEffect('colorSegmentation', colorData);
+    }
+
+    touchingColorMenu (args, util) {
+        const color = this.colors[args.COLOR_ID];
+        return util.target.isTouchingColor(color);
     }
 
     touchingColor (args, util) {
         const color = Cast.toRgbColorList(args.COLOR);
+        return util.target.isTouchingColor(color);
+    }
+
+    whenTouchingColorMenu (args, util) {
+        const color = this.colors[args.COLOR_ID];
         return util.target.isTouchingColor(color);
     }
 
